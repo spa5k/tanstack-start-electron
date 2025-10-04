@@ -1,12 +1,10 @@
 import { is } from "@electron-toolkit/utils";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { getPort } from "get-port-please";
 import { existsSync } from "node:fs";
 import { createConnection } from "node:net";
 import { pathToFileURL } from "node:url";
 import { join } from "path";
-
-const { app, BrowserWindow, ipcMain } =
-  require("electron") as typeof import("electron");
 
 let nitroServerPromise: Promise<number> | null = null;
 

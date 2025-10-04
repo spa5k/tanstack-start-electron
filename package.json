@@ -4,6 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "main": "build/main.cjs",
+  "version": "0.0.1",
   "scripts": {
     "app:build": "vite build",
     "app:dev": "vite dev",
