@@ -3,16 +3,30 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "main": "build/main.cjs",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build && tsc --noEmit",
+    "app:build": "vite build",
+    "app:dev": "vite dev",
+    "build": "run-s app:build typecheck electron:build",
+    "dev": "npm-run-all --parallel electron:dev app:dev",
+    "dist": "run-s build electron:dist",
+    "electron:build": "tsup",
+    "electron:build_watch": "tsup --watch",
+    "electron:dev": "npm-run-all --parallel electron:build_watch electron:watch",
+    "electron:dist": "electron-builder --dir",
+    "electron:dist:deb": "electron-builder --linux deb",
+    "electron:watch": "cross-env NODE_ENV=development nodemon",
+    "format": "prettier --write .",
+    "postinstall": "electron-builder install-app-deps",
     "start": "node .output/server/index.mjs",
-    "format": "prettier --write ."
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@electron-toolkit/utils": "^4.0.0",
     "@tanstack/react-router": "^1.132.33",
     "@tanstack/react-router-devtools": "^1.132.33",
     "@tanstack/react-start": "^1.132.36",
+    "get-port-please": "^3.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.3.1",
@@ -24,12 +38,49 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "cross-env": "^10.1.0",
+    "electron": "^38.2.1",
+    "electron-builder": "^26.0.12",
     "nitro": "npm:nitro-nightly",
+    "nodemon": "^3.1.10",
+    "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.14",
+    "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.9",
     "vite-tsconfig-paths": "^5.1.4"
+  },
+  "build": {
+    "asar": true,
+    "executableName": "TanStackStartElectron",
+    "appId": "com.saybackend.tanstack-start",
+    "asarUnpack": [
+      "server/**",
+      "**/*.node"
+    ],
+    "files": [
+      "build",
+      {
+        "from": ".output/server",
+        "to": "app/server"
+      },
+      {
+        "from": ".output/public",
+        "to": "app/public"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "category": "Development"
+    }
   }
 }
