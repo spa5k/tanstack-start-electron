@@ -1,191 +1,210 @@
-# Full-Stack React in Electron — With SSR, RSC, and No Open Ports
+# TanStack Start × Electron: A Full-Stack Desktop Starter
 
-### How TanStack Start and a custom `app://` protocol removed the hidden web server from my desktop app
+### SSR, streaming, server functions, React Server Components, typed IPC — and a production build with no open ports
 
-Every Electron app that renders React on the server hides a web server.
+Desktop apps deserve the same tools as web apps. TanStack Start gives you typed routing, server-side
+rendering, server functions, and React Server Components. Electron gives you the desktop.
 
-It starts on a random localhost port. The window loads that URL. Everything works — until the firewall
-asks the user a question, the port collides with something else, or another local process finds your
-app's server and starts talking to it.
+This project joins them. It is a production-ready starter: the same server code runs in Electron and
+on Node, the renderer is sandboxed, the IPC bridge is fully typed, and `pnpm dist` produces an
+installer with no `node_modules` inside.
 
-I maintain a Next.js + Electron boilerplate. It works, and the server is the part I always disliked.
-So when I migrated the project to TanStack Start, I decided to remove the server. Not the rendering —
-the *socket*.
-
-This is the story of how it works, and the four sharp edges I hit on the way.
+It is also the successor to my Next.js App Router + Electron boilerplate.
 
 ---
 
-## What the app does
+## What you get
 
-The project is a starter for full-stack React in a desktop shell. It has:
-
-- **SSR** — the server renders the HTML, React hydrates it.
-- **Streaming** — slow data arrives after the shell, in the same response.
-- **Server functions** — typed RPC with zod validation, no API layer.
-- **Server routes** — plain HTTP endpoints when you need them.
-- **React Server Components** — experimental, with client slots.
-- **IPC** — a typed, sandboxed `window.desktop` bridge.
+- **File-based routing** with TanStack Router. Routes are typed, end to end.
+- **SSR and hydration** with a real server render, not a static `index.html`.
+- **Streaming** with deferred loader data and Suspense.
+- **Server functions** — typed RPC with zod validation and no API layer.
+- **Server-only modules** that can never leak into the client bundle.
+- **Server routes** for webhooks, health checks, and downloads.
+- **React Server Components** (experimental) with client slots.
+- **A typed IPC bridge** over `contextBridge`, with a sandboxed renderer.
+- **No open ports** in the default production mode.
+- **Packaging** for macOS, Windows, and Linux with electron-builder.
+- **An end-to-end smoke test** that drives the real app.
 
 ![Overview page with an SSR snapshot and the IPC panel](screenshots/overview.jpg)
 
-The important part: the exact same server code builds for the web. The desktop app is just one host
-of the handler.
+The overview page is server-rendered. Everything on it comes from the SSR process: the timestamps,
+the request headers, the Node version. The panel on the right is the live IPC bridge.
 
 ---
 
-## The hidden server problem
+## One handler, three hosts
 
-The classic approach is simple. Build a standalone Node server, spawn it from the Electron main
-process, wait for `/api/health`, then point the window at `http://127.0.0.1:<port>`.
+The build produces a single fetch handler. Electron serves it in-process. A flag starts it as a child
+process on a loopback port. Node serves it for the web version.
 
-I ran that for two years. It is fine, but the port stays open for the whole session, and that has
-real costs:
+![One handler, three hosts](blog/hosts.png)
 
-- **Firewall and antivirus prompts.** On Windows, a new listening socket is a new dialog.
-- **Port collisions.** Rare, but they happen, and they are annoying to debug.
-- **Local attack surface.** Any process on the machine can call your app's server. Your server
-  functions are now a local API.
-- **Two runtimes.** The main process and the server process have separate memory, and server code
-  cannot touch Electron APIs.
-
-Then I read about [`next-electron-rsc`](https://github.com/kirill-konshin/next-electron-rsc) by Kirill
-Konshin. Its idea is elegant: **run the framework's request handler inside the Electron main process,
-and serve the renderer over a custom protocol.** No port. No child process.
-
-I wanted the same thing for TanStack Start.
+This shape keeps the project honest: the desktop app cannot drift away from the web app, because they
+run the same code.
 
 ---
 
-## Step 1: get a fetch handler
+## The web app
 
-TanStack Start builds with Nitro. The default `node-server` preset emits a file that starts
-listening when you import it. That is the opposite of what I needed.
+### Routing
 
-Nitro also ships a `standard` preset. It exports exactly what I wanted:
+TanStack Router reads `src/routes` and generates `src/routeTree.gen.ts`. Add a file, get a route.
+Links and navigation are type-checked, including path params and search params.
 
-```js
-// .output/server/index.mjs
-export default { fetch: useNitroApp().fetch }
-```
+The root route renders the full `<html>` document through the `shellComponent` slot, with
+`<HeadContent />` and `<Scripts />` from the router.
 
-A plain fetch handler. No listener. Static asset serving stays in the bundle when I enable it:
+### SSR and hydration
+
+Route loaders run on the server during SSR and on the client during navigation. Browser-only values —
+like `window.desktop` — are read inside an effect so the server render and the first client render
+agree:
 
 ```ts
-// vite.config.ts
-nitro({
-  preset: 'standard',
-  serveStatic: true,
-}),
-```
-
-`vite build` now produces one handler plus the client assets. The same output serves Electron and a
-plain Node deployment.
-
----
-
-## Step 2: run it in the main process
-
-The main bundle is CommonJS. The handler is ESM. A dynamic `import()` bridges them:
-
-```ts
-// electron/src/handler.ts
-const module = (await import(pathToFileURL(entry).href)) as {
-  default: { fetch: FetchHandler }
+export function useDesktop(): DesktopApi | null {
+  const [desktop, setDesktop] = useState<DesktopApi | null>(null)
+  useEffect(() => setDesktop(window.desktop ?? null), [])
+  return desktop
 }
-loaded = { fetch: module.default.fetch, root }
 ```
 
-The main process can now answer requests directly. It also gets a bonus: **server functions run in
-the main process**, so they can call Electron APIs.
+Hydration mismatches are a class of bug you never see in this project.
+
+### Streaming
+
+The `/ssr` page returns a slow promise from its loader without awaiting it, then renders it with
+`<Await>` inside `<Suspense>`. React sends the shell immediately and streams the rest when it
+resolves.
+
+![Streaming SSR page](screenshots/streaming-ssr.jpg)
+
+The timing is visible in the Network tab: the document arrives in chunks, and the report lands about
+1.5 seconds later in the same response.
+
+### Server functions
+
+`createServerFn` turns a function into a typed RPC endpoint. During SSR it runs in the same process.
+In the browser it becomes a network call. Zod schemas plug into `.validator()`.
+
+```ts
+export const incrementCounter = createServerFn({ method: 'POST' })
+  .validator(z.object({ by: z.number().int().min(1).max(10) }))
+  .handler(async ({ data }) => {
+    const current = await readCounter()
+    return writeCounter({ value: current.value + data.by })
+  })
+```
+
+![Server functions page with the filesystem counter](screenshots/server-functions.jpg)
+
+The counter writes a real file to Electron's `userData` directory. The path crosses the process
+boundary through `APP_DATA_DIR`, so the same handler also works on a server.
+
+### Server routes
+
+For raw HTTP, add a `server` block to a route:
+
+```ts
+export const Route = createFileRoute('/api/health')({
+  server: { handlers: { GET: () => Response.json({ ok: true }) } },
+})
+```
+
+Not everything needs RPC. Webhooks, file downloads, and health checks belong here.
+
+### React Server Components
+
+RSC is experimental and enabled with one plugin flag. Server components render to a Flight payload
+and never ship their code to the browser. Client islands arrive through slots:
+
+```tsx
+<CompositeComponent src={card.src} renderStamp={...}>
+  <SlotCounter label="children slot" />
+</CompositeComponent>
+```
+
+![Server components page](screenshots/server-components.jpg)
+
+The page mixes server-rendered markup with interactive client components. The bundle stays small,
+because the heavy code never leaves the server.
 
 ---
 
-## Step 3: serve the window over `app://`
+## The desktop layer
 
-Electron lets you register a privileged custom scheme and answer it with a fetch handler:
+### A typed IPC bridge
+
+`src/lib/desktop-contract.ts` is the single source of truth for channels and payload types. The
+preload script, the main process, and the renderer all import it.
 
 ```ts
-// electron/src/protocol.ts
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: 'app',
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      corsEnabled: true,
-      stream: true,
-    },
+contextBridge.exposeInMainWorld('desktop', {
+  platform: process.platform,
+  invoke: {
+    appInfo: () => ipcRenderer.invoke(IPC.invoke.appInfo),
+    ping: (message) => ipcRenderer.invoke(IPC.invoke.ping, message),
   },
-])
-
-session.defaultSession.protocol.handle('app', (request) =>
-  fetch(toServerRequest(request)),
-)
+  on: (event, listener) => { /* subscribe, and return an unsubscribe function */ },
+})
 ```
 
-The window loads `app://renderer/`. Relative asset URLs resolve to the same origin. Fetch, modules,
-history, and streaming all work. The handler never touches a socket.
+The renderer calls `window.desktop.invoke.ping('hello')` and gets a typed result. The main process
+treats every argument as untrusted input.
+
+### Security defaults
+
+- `contextIsolation: true` — page JavaScript cannot touch the preload realm.
+- `sandbox: true` — the renderer runs in the operating system sandbox.
+- `nodeIntegration: false` — no `require` and no `process` in the page.
+- A navigation guard that blocks other origins and opens external links in the system browser.
+
+---
+
+## Production
+
+### The build
+
+```
+pnpm build
+  ├─ vite build
+  │    ├─ .output/public/          # client assets
+  │    ├─ .output/server/index.mjs # fetch handler (Nitro standard preset)
+  │    └─ .output/nitro.json
+  └─ tsup → build/main.cjs, build/preload.cjs, build/serve.cjs
+```
+
+The handler is a plain `default { fetch }` export. Static asset serving stays in the bundle.
+
+### No open ports by default
+
+Electron imports the handler into the main process. A privileged `app://` scheme answers every
+request from the renderer.
 
 ![Production flow: custom scheme or loopback HTTP](blog/prod-flow.png)
 
----
+No child process. No TCP port. And a nice side effect: server functions run in the main process, so
+they can call Electron APIs directly.
 
-## The four sharp edges
+You can verify it while the app runs:
 
-Custom schemes are not HTTP. Four things broke, and each one taught me something.
+![lsof shows no listening TCP sockets](blog/no-ports.png)
 
-### 1. Custom schemes have a null origin
+### Two hosting modes
 
-TanStack Start normalizes every request URL with `new URL(...)`. For a custom scheme, `URL.origin` is
-the string `"null"`, so this throws:
+Both modes ship in the same build:
 
-```
-TypeError: Invalid URL
-  input: '/api/health'
-  base: 'null'
-```
+- **Custom scheme — `pnpm start`.** No ports. In-process handler. Server code can use Electron APIs.
+- **Loopback HTTP — `ELECTRON_USE_HTTP_SERVER=1 pnpm start`.** A child process on a random
+  `127.0.0.1` port. Normal cookies and a debuggable URL.
 
-The fix is a synthetic origin. The protocol layer rewrites each `app://renderer/...` request into a
-normal request for `http://localhost`, and rewrites the `Origin` and `Referer` headers to match.
+The scheme mode is the default because it is the safer and faster one. The HTTP mode is the escape
+hatch for apps that need normal web behavior.
 
-### 2. CSRF middleware checks the origin
+### Packaging
 
-TanStack Start protects server functions with CSRF middleware. It reads `Sec-Fetch-Site` first, then
-`Origin`, then `Referer`. After the rewrite, all three agree. Requests from the renderer look
-same-origin, and the middleware passes them.
-
-### 3. Chromium blocks cookies on custom schemes
-
-This is the biggest one. The error is explicit:
-
-```
-Failed to set cookie - Attempted to set a cookie from a scheme
-that does not support cookies.
-```
-
-Server sessions would simply break. So the project keeps a small cookie jar for the app origin. It
-adds a `Cookie` header to each request and stores each `Set-Cookie` response header. Server sessions
-work again.
-
-Two limits remain, and I document them instead of hiding them:
-
-- **`document.cookie` is always empty.** Page JavaScript cannot read or write cookies.
-- **The jar lives in memory.** Cookies clear when the app quits.
-
-If you need normal cookie behavior, the project has an escape hatch: start the same handler as a
-child process on a loopback port.
-
-```bash
-ELECTRON_USE_HTTP_SERVER=1 pnpm start
-```
-
-One flag. Same build. One local socket.
-
-### 4. Packaging has no `node_modules`
-
-The main bundle inlines its dependencies. The handler is self-contained. So the package ships:
+`electron-builder.yml` ships the main bundle in the ASAR and the handler as unpacked resources:
 
 ```
 Contents/Resources/
@@ -193,102 +212,33 @@ Contents/Resources/
 └── app-server/     ~2.4 MB  (handler, client assets, serve.cjs)
 ```
 
-No `node_modules`. The installer stays small, and the app starts fast.
+No `node_modules`. The installer stays small and the app starts fast.
 
 ---
 
-## Proof: zero listening sockets
+## Testing
 
-Here is the whole point in one command:
-
-![lsof shows no listening TCP sockets](blog/no-ports.png)
-
-The app is running. SSR, server functions, RSC — all working. And nothing listens on TCP.
-
-I did not want to trust that by eye. So the repo has an end-to-end smoke test that drives the real
-renderer through `webContents.executeJavaScript`:
+The project includes a smoke test that drives the real renderer through
+`webContents.executeJavaScript`. One command checks the whole stack:
 
 ![pnpm smoke output with six checks](blog/smoke.png)
 
-Six checks: server-rendered HTML, the IPC bridge, client navigation with a server-function mutation,
-RSC rendering, streamed data, and one timing check that fails if streaming is buffered. The last one
-matters — a protocol handler can silently buffer, so the test measures the first byte and the full
-response time of an SSR page.
+It covers server-rendered HTML, the IPC bridge, client navigation with a server-function mutation,
+RSC rendering, streamed data, and a timing check that fails if streaming is buffered. It runs in CI
+with `xvfb-run -a pnpm smoke`.
 
 ---
 
-## The app tour
+## Development
 
-Streaming works through the custom protocol. The shell arrives first, the report streams in later:
-
-![Streaming SSR page](screenshots/streaming-ssr.jpg)
-
-Server functions call real Node APIs. This counter writes a file to Electron's `userData` directory:
-
-![Server functions page with the filesystem counter](screenshots/server-functions.jpg)
-
-React Server Components render on the server and arrive as a Flight payload. Client islands keep
-their state:
-
-![Server components page](screenshots/server-components.jpg)
-
----
-
-## Development stays normal
-
-None of this applies in development, and that is on purpose. `pnpm dev` keeps the Vite dev server and
-full HMR. The `app://` scheme is a production concern.
+Development stays normal. `pnpm dev` runs the Vite dev server with full HMR, and the main process
+restarts when you change it.
 
 ![Development flow: Vite, tsup watch, and Electron](blog/dev-flow.png)
 
-You get hot reload for routes and components, and an automatic restart when the main process changes.
-
 ---
 
-## Choosing between the two modes
-
-Both modes ship in the repo. Pick based on your app:
-
-**Custom scheme (default) — `pnpm start`**
-
-- No open ports, no firewall prompts, no local API.
-- In-process handler, so server code can use Electron APIs.
-- Cookies work through the jar, but `document.cookie` stays empty.
-- One caveat: server code sees `http://localhost` as its origin, so use relative URLs.
-
-**Loopback HTTP — `ELECTRON_USE_HTTP_SERVER=1 pnpm start`**
-
-- Normal cookies, normal origins, a debuggable URL.
-- Use it when the scheme limits break something, or when you want to inspect the server in a browser.
-
----
-
-## What I got
-
-After the migration, the starter looks like this:
-
-- **One handler, two hosts.** Electron serves it in-process. Node serves it with `srvx`. Same code.
-- **No listening sockets** in the default production mode.
-- **Full framework features** in the desktop build: SSR, streaming, server functions, server routes,
-  and experimental RSC.
-- **A typed IPC bridge** next to the server functions, with clear rules for when to use which.
-- **A six-check smoke test** that runs in CI and catches regressions in the whole stack.
-
-The codebase is small. The interesting parts are three files: `handler.ts` loads the bundle,
-`protocol.ts` answers `app://`, and `cookies.ts` keeps sessions alive.
-
----
-
-## Limitations, honestly
-
-- **RSC is experimental.** The API can change. It is behind a flag in `vite.config.ts`.
-- **Nitro is a beta dependency** at this version. Pin it.
-- **Custom scheme limits are real.** The README has a full list of what changes and what breaks.
-- **Signing and icons** are not included. Bring your own certificate.
-
----
-
-## Try it
+## Getting started
 
 ```bash
 git clone git@github.com:spa5k/tanstack-start-electron.git
@@ -301,30 +251,51 @@ pnpm smoke    # six checks against the real app
 
 The repository: **https://github.com/spa5k/tanstack-start-electron**
 
-If you want the full details — every trade-off, the packaging layout, and the smoke test — the README
-covers them. And if you find a better way to handle cookies on custom schemes, I would love to hear
-it.
+---
+
+## Design notes
+
+A few choices are worth knowing before you extend the project.
+
+- **The handler sees `http://localhost` as its origin.** Custom schemes have a null origin, and
+  TanStack Start normalizes URLs with `new URL(...)`. The protocol layer rewrites requests to a
+  synthetic origin, and rewrites the `Origin` and `Referer` headers to match, so the CSRF middleware
+  accepts same-origin calls. Use relative URLs in server code.
+- **Cookies need a jar on custom schemes.** Chromium blocks cookies for `app://`. A small in-memory
+  jar adds a `Cookie` header and stores `Set-Cookie` headers, so server sessions work.
+  `document.cookie` stays empty. Use the HTTP mode if your app depends on it.
+- **Server code can use Electron APIs.** The handler runs in the main process. Guard those imports
+  if you also build for the web.
+- **The web version is not an afterthought.** `node scripts/serve.mjs` runs the same handler with
+  `srvx`. Cloudflare, Netlify, and Vercel work through their Nitro presets.
+
+---
+
+## Limitations
+
+- **RSC is experimental.** The API can change, and it is behind a flag.
+- **Nitro is a beta dependency** at this version. Pin it.
+- **Custom scheme limits are real.** The README has the full list.
+- **Signing and icons** are not included. Bring your own certificate.
 
 ---
 
 *Built with [TanStack Start](https://tanstack.com/start), [Nitro](https://nitro.build), and
-[Electron](https://www.electronjs.org/). The in-process protocol idea comes from
-[`next-electron-rsc`](https://github.com/kirill-konshin/next-electron-rsc) by Kirill Konshin.*
+[Electron](https://www.electronjs.org/).*
 
 <!--
 PUBLISHING NOTES (delete before posting)
 
-1. Upload these images to Medium in this order:
-   - screenshots/overview.jpg          (near "What the app does")
-   - blog/prod-flow.png                (architecture section)
-   - blog/no-ports.png                 (proof section)
-   - blog/smoke.png                    (proof section)
-   - screenshots/streaming-ssr.jpg     (app tour)
-   - screenshots/server-functions.jpg  (app tour)
-   - screenshots/server-components.jpg (app tour)
-   - blog/dev-flow.png                 (development section)
-2. Medium strips tables. This post has none — all lists.
-3. Code blocks paste best with Medium's "Code block" (Cmd+Opt+6) formatting.
-4. Suggested tags: Electron, React, TypeScript, Web Development, JavaScript.
-5. Suggested subtitle is the line under the title.
+Images, in order:
+  1. screenshots/overview.jpg          (What you get)
+  2. blog/hosts.png                    (One handler, three hosts)
+  3. screenshots/streaming-ssr.jpg     (Streaming)
+  4. screenshots/server-functions.jpg  (Server functions)
+  5. screenshots/server-components.jpg (RSC)
+  6. blog/prod-flow.png                (No open ports)
+  7. blog/no-ports.png                 (lsof proof)
+  8. blog/smoke.png                    (Testing)
+  9. blog/dev-flow.png                 (Development)
+
+Tags: Electron, React, TypeScript, Web Development, JavaScript
 -->

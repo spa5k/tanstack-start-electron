@@ -95,6 +95,46 @@
     </style>
   </head>
   <body>
+    <section class="shot" data-shot="hosts">
+      <p class="kicker">One handler, three hosts</p>
+      <h1>The same build runs in Electron and on Node.</h1>
+      <div class="stack">
+        <div class="row">
+          <div class="box dark">
+            <strong>Electron renderer</strong>
+            <span>app://renderer/</span>
+          </div>
+          <div class="arrow">───►<small>protocol.handle</small></div>
+          <div class="box">
+            <strong>Electron main · in-process</strong>
+            <span>SSR, server functions, RSC. 0 listening sockets.</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="box dark">
+            <strong>Electron renderer</strong>
+            <span>http://127.0.0.1:&lt;random&gt;</span>
+          </div>
+          <div class="arrow">───►<small>fetch</small></div>
+          <div class="box">
+            <strong>Child process · srvx</strong>
+            <span>The same handler with normal cookie behavior.</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="box dark">
+            <strong>Browser</strong>
+            <span>https://your-domain</span>
+          </div>
+          <div class="arrow">───►<small>fetch</small></div>
+          <div class="box">
+            <strong>Node, Docker, Cloudflare</strong>
+            <span>Deploy the same output to the web.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="shot" data-shot="dev-flow">
       <p class="kicker">Development</p>
       <h1>Vite runs the app. Electron loads it. HMR stays on.</h1>
