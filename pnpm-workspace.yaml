@@ -1,10 +1,16 @@
-nodeLinker: hoisted
+# This guide lives inside another pnpm workspace (the parent repo root), so it
+# declares its own workspace to stay self-contained and installable on its own.
+packages:
+  - '.'
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@tailwindcss/oxide'
-  - electron
-  - electron-winstaller
-  - esbuild
-
-shamefullyHoist: true
+# pnpm blocks postinstall scripts unless they are explicitly approved.
+# Electron needs its postinstall to download the binary; esbuild and Tailwind's
+# oxide binary need theirs to fetch the matching platform package.
+#
+# (pnpm 10 called this `onlyBuiltDependencies`; pnpm 11+ uses `allowBuilds`.)
+allowBuilds:
+  '@tailwindcss/oxide': true
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+  unrs-resolver: true

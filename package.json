@@ -1,87 +1,76 @@
 {
   "name": "tanstack-start-electron",
+  "version": "1.0.0",
   "private": true,
-  "sideEffects": false,
+  "description": "TanStack Start (SSR + streaming + RSC) running inside Electron",
   "type": "module",
   "main": "build/main.cjs",
-  "version": "0.0.1",
   "scripts": {
-    "app:build": "vite build",
-    "app:dev": "vite dev",
-    "build": "run-s app:build typecheck electron:build",
-    "dev": "npm-run-all --parallel electron:dev app:dev",
-    "dist": "run-s build electron:dist",
-    "electron:build": "tsup",
-    "electron:build_watch": "tsup --watch",
-    "electron:dev": "npm-run-all --parallel electron:build_watch electron:watch",
-    "electron:dist": "electron-builder --dir",
-    "electron:dist:deb": "electron-builder --linux deb",
-    "electron:watch": "cross-env NODE_ENV=development nodemon",
-    "format": "prettier --write .",
-    "postinstall": "electron-builder install-app-deps",
+    "dev": "concurrently -k -n web,desktop -c blue,magenta \"npm:dev:web\" \"npm:dev:desktop\"",
+    "dev:web": "vite dev --port 3000 --strictPort",
+    "dev:desktop": "concurrently -k -n electron,app -c yellow,green \"npm:electron:watch\" \"npm:electron:start\"",
+    "electron:watch": "tsup --config electron/tsup.config.ts --watch",
+    "electron:start": "wait-on build/main.cjs && cross-env NODE_ENV=development nodemon",
+    "build": "npm run build:web && npm run build:electron",
+    "build:web": "vite build",
+    "build:electron": "tsup --config electron/tsup.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p electron/tsconfig.json",
+    "preview": "vite preview",
     "start": "node .output/server/index.mjs",
-    "typecheck": "tsc --noEmit"
+    "dist": "npm run build && electron-builder",
+    "dist:dir": "npm run build && electron-builder --dir",
+    "smoke": "npm run build && cross-env ELECTRON_SMOKE_TEST=1 ELECTRON_FORCE_PRODUCTION=1 electron ."
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
-    "@tanstack/react-router": "^1.132.33",
-    "@tanstack/react-router-devtools": "^1.132.33",
-    "@tanstack/react-start": "^1.132.36",
+    "@tanstack/react-router": "^1.170.35",
+    "@tanstack/react-router-devtools": "^1.167.1",
+    "@tanstack/react-start": "^1.168.52",
     "get-port-please": "^3.2.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "tailwind-merge": "^3.3.1",
-    "zod": "^4.1.11"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.14",
-    "@types/node": "^24.6.2",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-rsc": "^0.5.34",
+    "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",
-    "electron": "^38.2.1",
-    "electron-builder": "^26.0.12",
-    "nitro": "npm:nitro-nightly",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "nitro": "^3.0.260903-beta",
     "nodemon": "^3.1.10",
-    "npm-run-all": "^4.1.5",
-    "postcss": "^8.5.6",
-    "prettier": "^3.6.2",
-    "tailwindcss": "^4.1.14",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.9",
-    "vite-tsconfig-paths": "^5.1.4"
+    "react-server-dom-webpack": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "wait-on": "^9.1.0"
   },
-  "build": {
-    "asar": true,
-    "executableName": "TanStackStartElectron",
-    "appId": "com.saybackend.tanstack-start",
-    "asarUnpack": [
-      "server/**",
-      "**/*.node"
-    ],
-    "files": [
-      "build",
-      {
-        "from": ".output/server",
-        "to": "app/server"
-      },
-      {
-        "from": ".output/public",
-        "to": "app/public"
-      }
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "linux": {
-      "target": [
-        "deb"
-      ],
-      "category": "Development"
-    }
+  "author": {
+    "name": "TanStack Start Electron Guide"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "tanstack-start",
+    "tanstack-router",
+    "electron",
+    "rsc",
+    "ssr",
+    "vite",
+    "react",
+    "nitro"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spa5k/tanstack-start-electron.git"
+  },
+  "homepage": "https://github.com/spa5k/tanstack-start-electron",
+  "bugs": {
+    "url": "https://github.com/spa5k/tanstack-start-electron/issues"
   }
 }

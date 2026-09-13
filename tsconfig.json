@@ -1,23 +1,23 @@
 {
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["src", "vite.config.ts", "electron/tsup.config.ts"],
   "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
+    "target": "ES2024",
+    "lib": ["DOM", "DOM.Iterable", "ES2024"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "target": "ES2022",
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "./src",
+    "useDefineForClassFields": true,
+    "types": ["vite/client", "node"],
     "paths": {
-      "~/*": ["./*"],
-      "src/*": ["./*"]
-    },
-    "noEmit": true
+      "~/*": ["./src/*"]
+    }
   }
 }

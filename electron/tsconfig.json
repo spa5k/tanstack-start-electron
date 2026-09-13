@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["src/**/*.ts", "../src/lib/desktop-contract.ts"],
+  "compilerOptions": {
+    "lib": ["ES2024"],
+    "types": ["node"],
+    "jsx": "react-jsx"
+  }
+}

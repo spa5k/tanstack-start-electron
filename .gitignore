@@ -1,21 +1,26 @@
+# dependencies
 node_modules
-package-lock.json
-yarn.lock
 
-.DS_Store
-.cache
-.env
-.vercel
+# TanStack Start build output (client + nitro server bundle)
 .output
 .nitro
-/build/
-/api/
-/server/build
-/public/build# Sentry Config File
-.env.sentry-build-plugin
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-.tanstack
 dist
+
+# Electron main/preload bundle
+/build
+
+# electron-builder output
+/release
+
+# tooling
+*.tsbuildinfo
+.vite
+.DS_Store
+.env
+.env.local
+
+# runtime state written by server functions in dev
+/server-state
+
+# logs
+*.log

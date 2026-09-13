@@ -2,6 +2,6 @@
   "$schema": "https://json.schemastore.org/nodemon.json",
   "exec": "electron .",
   "watch": ["build"],
-  "ignore": [".output"],
-  "ext": "js,json"
+  "delay": 250,
+  "verbose": false
 }

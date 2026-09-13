@@ -1,0 +1,42 @@
+appId: com.example.tanstack-start-electron
+productName: TanStack Start Desktop
+copyright: Copyright © 2026
+
+directories:
+  output: release
+  buildResources: build-resources
+
+# The renderer + SSR server are shipped as static files, and the Electron main
+# process is a single bundled .cjs file, so no node_modules are needed at all.
+asar: true
+npmRebuild: false
+
+files:
+  - build/**
+  - package.json
+  - '!node_modules/**'
+
+extraResources:
+  # `.output` is the self-contained Nitro Node server produced by `vite build`.
+  # It lands in `resources/app-server/` next to the ASAR archive.
+  - from: .output
+    to: app-server
+
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.developer-tools
+  darkModeSupport: true
+
+win:
+  target:
+    - nsis
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
