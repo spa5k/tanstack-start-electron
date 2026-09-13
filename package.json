@@ -15,7 +15,6 @@
     "build:web": "vite build",
     "build:electron": "tsup --config electron/tsup.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p electron/tsconfig.json",
-    "preview": "node scripts/serve.mjs",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
     "dist:dir": "npm run build && electron-builder --dir",
