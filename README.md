@@ -122,10 +122,12 @@ tab and reload the page. The HTML comes from the SSR server, not from a static `
 Now build the real app:
 
 ```bash
-pnpm build      # makes .output/ (SSR server) and build/ (main and preload scripts)
-pnpm smoke      # builds, starts the production server, drives the UI, and checks the result
+pnpm start      # builds, then opens the desktop app with the production server
+pnpm smoke      # builds and checks every feature in the production app
 pnpm dist       # makes installers in release/
 ```
+
+`pnpm start` uses the built server in `.output/`. The dev server is used only by `pnpm dev`.
 
 ## Scripts
 
@@ -141,7 +143,9 @@ pnpm dist       # makes installers in release/
 | `pnpm smoke`          | Builds everything and runs the end-to-end check inside Electron           |
 | `pnpm dist`           | Packages installers for the current platform                              |
 | `pnpm dist:dir`       | Packages an unpacked app directory (fast, for tests)                       |
-| `pnpm start`          | Runs the production SSR server alone (`node .output/server/index.mjs`)    |
+| `pnpm start`          | Builds, then runs the desktop app on the built server                      |
+| `pnpm start:server`   | Runs the production SSR server alone (`node .output/server/index.mjs`)    |
+| `pnpm screenshots`    | Builds, then saves the README screenshots to `screenshots/`                |
 | `pnpm preview`        | Runs the Vite preview server over the production build                    |
 
 Environment variables:
@@ -149,7 +153,7 @@ Environment variables:
 | Variable                      | Effect                                                                 |
 | ----------------------------- | ---------------------------------------------------------------------- |
 | `ELECTRON_RENDERER_URL`       | Loads a different dev URL (default `http://localhost:3000`)             |
-| `ELECTRON_FORCE_PRODUCTION=1` | Uses the built `.output` server even when the app is not packaged       |
+| `ELECTRON_FORCE_PRODUCTION=1` | Forces the built `.output` server, even with NODE_ENV=development      |
 | `ELECTRON_SMOKE_TEST=1`       | Runs the smoke test and exits with a non-zero code on failure           |
 
 ## Project structure
@@ -233,8 +237,12 @@ pnpm dev
 - A change to `electron/src/*.ts` rebuilds the main bundle. Then nodemon restarts the app.
 - `electron/src/main.ts` calls `waitForUrl('http://localhost:3000')` before it opens the window. So
   you never see an empty window while Vite starts.
+- `pnpm dev` sets `NODE_ENV=development`. That is the only reason the app uses the dev server. See
+  [Production mode](#production-mode) for the other cases.
 
 ### Production mode
+
+`pnpm start` builds the app and opens it on the built server. You can also run the steps by hand:
 
 ```
 pnpm build
@@ -253,10 +261,22 @@ pnpm dist → electron-builder
        └─ server/index.mjs
 ```
 
+The app selects the renderer like this:
+
+| Condition                             | Renderer used          |
+| ------------------------------------- | ---------------------- |
+| Packaged app                          | built `.output` server |
+| `NODE_ENV=development` (`pnpm dev`)   | Vite dev server        |
+| `ELECTRON_RENDERER_URL` is set        | that URL               |
+| Anything else, including `pnpm start` | built `.output` server |
+
+The built server supports every feature: SSR, streaming, server functions, server routes, RSC, and
+the IPC bridge. `pnpm smoke` checks them on the built server.
+
 At runtime, the app does these steps:
 
-1. `electron/src/server.ts` finds the server entry. In development it uses `.output`. In a package
-   it uses `resources/app-server`.
+1. `electron/src/server.ts` finds the server entry. An unpackaged run uses `.output`. A packaged app
+   uses `resources/app-server`.
 2. It asks `get-port-please` for a free port in the range `30011–50000`.
 3. It starts **the Electron binary in Node mode**:
 
@@ -583,8 +603,8 @@ ELECTRON_SMOKE_TEST=1 npx electron . # uses the running dev server
 | Symptom | Cause and fix |
 | ------- | ------------- |
 | `Port 3000 is already in use` | Another dev server is running. Run `lsof -ti :3000 \| xargs kill`. `strictPort` is on, so the URL that Electron waits for never changes. |
-| `The SSR server bundle was not found … Run "npm run build:web"` | You asked for the packaged path before the build. Run `pnpm build`. Or use `pnpm dev` for the dev path. |
-| `app.isPackaged` is false, but you want production behavior | Run `ELECTRON_FORCE_PRODUCTION=1 electron .`. `pnpm smoke` uses the same switch. |
+| `The SSR server bundle was not found … Run "pnpm build"` | The app selected the built server, but `.output` is missing. Run `pnpm build`. |
+| The app shows the dev server, but you built it | The app uses the dev server only when `NODE_ENV=development` or `ELECTRON_RENDERER_URL` is set. Unset them, or run `pnpm start`. |
 | `Ignored build scripts: electron, esbuild, …` (pnpm 10 or 11) | pnpm blocks postinstall scripts by default. `pnpm-workspace.yaml` already approves the needed packages (`allowBuilds`). Run `pnpm approve-builds` if you add a package with scripts. |
 | Streaming "does not work" with `curl` or Node `fetch` | TanStack Start buffers for bot user-agents on purpose. Test with `-A "Mozilla/5.0 …"`. |
 | RSC build errors after an upgrade | RSC is experimental. Keep `@tanstack/react-start`, `@vitejs/plugin-rsc`, and `react-server-dom-webpack` at the versions in `package.json`. |

@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install dev build build_web build_electron typecheck smoke dist dist_dir clean
+.PHONY: help install dev build build_web build_electron typecheck smoke start start_server dist dist_dir clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -23,8 +23,14 @@ build_electron: ## Bundle the Electron main/preload scripts (build/)
 typecheck: ## Type-check the renderer, the server and the Electron code
 	pnpm typecheck
 
-smoke: ## Build and run the end-to-end smoke test inside Electron
+smoke: ## Build and check every feature in the production app
 	pnpm smoke
+
+start: ## Build, then run the desktop app on the built server
+	pnpm start
+
+start_server: ## Run only the production SSR server
+	pnpm start:server
 
 dist: ## Package the app for the current platform (dmg/zip, nsis, AppImage/deb)
 	pnpm dist

@@ -37,7 +37,7 @@ export async function startProductionServer(): Promise<string> {
   if (!existsSync(entry)) {
     throw new Error(
       `The SSR server bundle was not found at ${entry}.\n` +
-        'Run "npm run build:web" (or "npm run build") before starting the packaged app.',
+        'Run "pnpm build", then start the app again.',
     )
   }
 

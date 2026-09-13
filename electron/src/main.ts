@@ -1,4 +1,3 @@
-import { is } from '@electron-toolkit/utils'
 import { BrowserWindow, app, dialog, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
@@ -6,16 +5,25 @@ import { buildApplicationMenu } from './menu'
 import { startProductionServer, stopProductionServer } from './server'
 import { runSmokeTest } from './smoke'
 
-/** Where `vite dev` serves the renderer. Override with ELECTRON_RENDERER_URL. */
+/** The renderer URL for `vite dev`. Override with ELECTRON_RENDERER_URL. */
 const DEV_SERVER_URL =
   process.env.ELECTRON_RENDERER_URL ?? 'http://localhost:3000'
 
 /**
- * Unpackaged builds use the dev server. ELECTRON_FORCE_PRODUCTION=1 selects
- * the real `.output` server instead (used by `npm run smoke`).
+ * The dev server is used only when a developer asks for it:
+ *
+ *   • `pnpm dev` sets NODE_ENV=development, or
+ *   • ELECTRON_RENDERER_URL points at a running dev server.
+ *
+ * Every other run — including an unpackaged run after `pnpm build` — uses the
+ * built `.output` server. ELECTRON_FORCE_PRODUCTION=1 forces that path too.
+ * A packaged app always uses the built server.
  */
 const useDevServer =
-  is.dev && process.env.ELECTRON_FORCE_PRODUCTION !== '1'
+  !app.isPackaged &&
+  process.env.ELECTRON_FORCE_PRODUCTION !== '1' &&
+  (process.env.NODE_ENV === 'development' ||
+    Boolean(process.env.ELECTRON_RENDERER_URL))
 const smokeTest = process.env.ELECTRON_SMOKE_TEST === '1'
 
 /**

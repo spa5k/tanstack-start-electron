@@ -16,14 +16,14 @@
     "build:electron": "tsup --config electron/tsup.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p electron/tsconfig.json",
     "preview": "vite preview",
-    "start": "node .output/server/index.mjs",
+    "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
     "dist:dir": "npm run build && electron-builder --dir",
-    "smoke": "npm run build && cross-env ELECTRON_SMOKE_TEST=1 ELECTRON_FORCE_PRODUCTION=1 electron .",
-    "screenshots": "npm run build && electron scripts/screenshots.cjs"
+    "smoke": "npm run build && cross-env NODE_ENV=production ELECTRON_SMOKE_TEST=1 electron .",
+    "screenshots": "npm run build && electron scripts/screenshots.cjs",
+    "start:server": "node .output/server/index.mjs"
   },
   "dependencies": {
-    "@electron-toolkit/utils": "^4.0.0",
     "@tanstack/react-router": "^1.170.35",
     "@tanstack/react-router-devtools": "^1.167.1",
     "@tanstack/react-start": "^1.168.52",

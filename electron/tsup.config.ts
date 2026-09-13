@@ -19,5 +19,5 @@ export default defineConfig({
   // `electron` is provided by the runtime…
   external: ['electron'],
   // …everything else is inlined so the packaged app needs no node_modules.
-  noExternal: ['@electron-toolkit/utils', 'get-port-please'],
+  noExternal: ['get-port-please'],
 })
