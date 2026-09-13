@@ -1,4 +1,5 @@
 import { protocol, session } from 'electron'
+import { getCookieHeader, storeSetCookies } from './cookies'
 import type { FetchHandler } from './handler'
 
 export const APP_SCHEME = 'app'
@@ -32,9 +33,14 @@ export function attachAppProtocol(
   fetch: FetchHandler,
   serverOrigin: string,
 ): void {
-  session.defaultSession.protocol.handle(APP_SCHEME, (request) =>
-    fetch(toServerRequest(request, serverOrigin)),
-  )
+  session.defaultSession.protocol.handle(APP_SCHEME, async (request) => {
+    const response = await fetch(toServerRequest(request, serverOrigin))
+
+    const setCookies = response.headers.getSetCookie()
+    if (setCookies.length > 0) storeSetCookies(setCookies)
+
+    return response
+  })
 }
 
 /**
@@ -50,6 +56,12 @@ function toServerRequest(request: Request, serverOrigin: string): Request {
   const headers = new Headers(request.headers)
   headers.delete('host')
   headers.set('origin', serverOrigin)
+
+  // Chromium sends no cookies for `app://`, so use the jar from cookies.ts.
+  if (!headers.has('cookie')) {
+    const cookieHeader = getCookieHeader()
+    if (cookieHeader) headers.set('cookie', cookieHeader)
+  }
 
   const referer = headers.get('referer')
   if (referer) {

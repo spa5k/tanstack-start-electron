@@ -499,6 +499,11 @@ asset serving in the bundle. `pnpm start:server` uses the same handler on Node t
 Streaming works through the protocol. `pnpm smoke` measures the first byte and the full response of
 an SSR page and fails if the handler buffers.
 
+> **Cookies.** Chromium does not give custom schemes a cookie jar. `electron/src/cookies.ts` keeps a
+> small jar for the app origin. It adds a `Cookie` header to each request and stores each
+> `Set-Cookie` response header. Server sessions keep working. `document.cookie` stays empty, so use
+> the main process if the page itself needs cookie data.
+
 ### Preload and the typed IPC contract
 
 `src/lib/desktop-contract.ts` is the **single source of truth**: channel names, payload types, and
