@@ -19,7 +19,6 @@ function ServerFunctionsPage() {
     startTransition(async () => {
       try {
         await fn()
-        // Re-run loaders so the UI reflects the server's new state.
         await router.invalidate()
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : String(cause))

@@ -5,16 +5,12 @@ import { app } from 'electron'
 import { getPort } from 'get-port-please'
 
 /**
- * Runs the TanStack Start SSR server as a child of the Electron main process.
- *
- * The server is a plain Node server bundled by Nitro (`.output/server/index.mjs`).
- * We spawn Electron's own binary in "Run As Node" mode, so no system Node
- * installation is required:
+ * Runs the TanStack Start SSR server as a child of the main process. It uses
+ * Electron's own binary in Node mode, so the user needs no system Node:
  *
  *   ELECTRON_RUN_AS_NODE=1 <path-to-electron> .output/server/index.mjs
  *
- * The server binds to a random loopback port, which is handed back to the
- * caller so the BrowserWindow can load it.
+ * The server binds to a random loopback port. The caller gets that origin.
  */
 
 let serverProcess: ChildProcess | null = null

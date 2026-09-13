@@ -1,17 +1,7 @@
 /**
- * ─────────────────────────────────────────────────────────────────────────────
- * The Electron ⇄ preload ⇄ renderer contract
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * This module is the single source of truth for every IPC channel and payload.
- * It is imported by:
- *
- *   • `electron/src/preload.ts`  → to build the `window.desktop` bridge
- *   • `electron/src/ipc.ts`      → to register `ipcMain.handle` listeners
- *   • renderer components        → for fully typed `window.desktop.*` calls
- *
- * It contains only constants and types, so it is safe to bundle into the
- * sandboxed preload script *and* into the browser renderer bundle.
+ * The single source of truth for every IPC channel and payload. It is imported
+ * by the preload script, the main process and the renderer. It contains only
+ * constants and types, so it is safe in a sandboxed preload and in the browser.
  */
 
 export const IPC = {

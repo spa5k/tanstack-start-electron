@@ -2,9 +2,8 @@ import { ClientOnly } from '@tanstack/react-router'
 import { useState } from 'react'
 
 /**
- * A client-only component used inside a server component's `children` slot on
- * the RSC page. It proves that server-rendered markup can wrap interactive
- * client islands.
+ * A client component for the `children` slot of a server component. It shows
+ * that server markup can wrap interactive client islands.
  */
 export function SlotCounter({ label = 'slot counter' }: { label?: string }) {
   const [count, setCount] = useState(0)

@@ -2,16 +2,12 @@ import { app, type BrowserWindow } from 'electron'
 import { stopProductionServer } from './server'
 
 /**
- * A headless end-to-end check for CI and for the curious.
+ * A headless end-to-end check for CI. It drives the real renderer through
+ * `webContents.executeJavaScript`, so it tests SSR, hydration, client-side
+ * routing, server-function RPC, RSC, streaming and the preload bridge.
  *
- * Run it with:
- *
- *   npm run smoke          # builds, then runs the packaged/prod-style app
- *   ELECTRON_SMOKE_TEST=1 npm run dev:desktop   # against the running dev server
- *
- * It drives the real renderer through `webContents.executeJavaScript`, so it
- * verifies the whole stack: SSR output, hydration, client-side routing,
- * server-function RPC and the preload IPC bridge.
+ * Run it with `pnpm smoke`, or against the dev server with
+ * `ELECTRON_SMOKE_TEST=1 npx electron .`.
  */
 
 interface SmokeResult {

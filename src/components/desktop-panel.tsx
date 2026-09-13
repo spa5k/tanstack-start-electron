@@ -27,7 +27,6 @@ export function DesktopPanel() {
         if (!cancelled) setError(String(cause))
       })
 
-    // Main → renderer push events, subscribed through the preload bridge.
     const unsubscribe = desktop.on('themeChanged', (payload) => {
       setLastTheme(payload.shouldUseDarkColors ? 'dark' : 'light')
     })

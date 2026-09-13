@@ -23,6 +23,7 @@ The repository has two parts:
 
 ## Table of contents
 
+- [Screenshots](#screenshots)
 - [Feature matrix](#feature-matrix)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
@@ -52,6 +53,24 @@ The repository has two parts:
 - [Deploying the web version](#deploying-the-web-version)
 - [Versions](#versions)
 - [Further reading](#further-reading)
+
+## Screenshots
+
+Overview. The page shows the SSR snapshot and the live IPC panel:
+
+![Overview page with the server snapshot and the Electron IPC panel](screenshots/overview.jpg)
+
+Streaming SSR. The shell arrives first. The report streams in later:
+
+![Streaming SSR page with the streamed report](screenshots/streaming-ssr.jpg)
+
+Server functions. The counter is stored on the server:
+
+![Server functions page with the filesystem counter](screenshots/server-functions.jpg)
+
+React Server Components. Server markup wraps client islands:
+
+![Server components page with composite RSC demos](screenshots/server-components.jpg)
 
 ## Feature matrix
 

@@ -4,9 +4,8 @@ import { Card, KeyValue, Pill } from '~/components/ui'
 import { getServerSnapshot } from '~/lib/server-info'
 
 export const Route = createFileRoute('/')({
-  // Loaders are isomorphic: this runs during SSR *and* on client-side
-  // navigation. Calling a server function inside it keeps the data access
-  // consistent in both worlds.
+  // This loader runs during SSR and on client navigation. The server function
+  // keeps the data access the same in both cases.
   loader: () => getServerSnapshot(),
   component: OverviewPage,
 })

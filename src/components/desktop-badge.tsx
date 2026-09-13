@@ -2,10 +2,8 @@ import { useDesktop } from '~/lib/desktop-client'
 import { Pill } from './ui'
 
 /**
- * Renders differently on the server, the plain web client, and Electron.
- * `useDesktop()` starts as `null` on both the server and the first client
- * render, so there is never a hydration mismatch — the badge simply upgrades
- * after hydration.
+ * Shows "Electron" or "Web preview". `useDesktop()` is `null` on the server
+ * and on the first client render, so hydration never fails.
  */
 export function DesktopBadge() {
   const desktop = useDesktop()

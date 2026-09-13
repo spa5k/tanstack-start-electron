@@ -2,13 +2,9 @@ import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 /**
- * A tiny filesystem-backed store. This file matches the `*.server.*` naming
- * convention, so TanStack Start's import protection refuses to load it into
- * the client bundle.
- *
- * `APP_DATA_DIR` is injected by the Electron main process when it spawns the
- * production SSR server, so state is written into Electron's per-user
- * `userData` directory instead of somewhere inside the app bundle.
+ * A tiny filesystem store. The `*.server.*` name keeps it out of the client
+ * bundle (import protection). `APP_DATA_DIR` is set by the Electron main
+ * process, so state goes to the per-user `userData` directory.
  */
 export interface CounterState {
   value: number

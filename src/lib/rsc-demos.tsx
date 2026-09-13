@@ -7,24 +7,11 @@ import { cpus, hostname, platform, release, totalmem } from 'node:os'
 import type * as React from 'react'
 
 /**
- * ─────────────────────────────────────────────────────────────────────────────
- * React Server Components
- * ─────────────────────────────────────────────────────────────────────────────
- *
  * `renderServerComponent(<Element />)` renders a component on the server and
- * returns a serializable "renderable" that can be inlined in the client tree.
- *
- * `createCompositeComponent(...)` does the same, but the component may declare
- * *slots* (children, render props, component props) that are filled with
- * client components, which is how you mix server data with interactivity.
- *
- * Everything in this module's handlers — including the `node:os` import above
- * — is stripped from the client bundle.
+ * returns a serializable value that can be inlined in the client tree.
+ * `createCompositeComponent(...)` also accepts slots (children, render props
+ * and component props) that client components fill.
  */
-
-/* -------------------------------------------------------------------------- */
-/* 1. A plain server component (no client interactivity)                      */
-/* -------------------------------------------------------------------------- */
 
 function HostReport() {
   const cores = cpus().length
@@ -70,10 +57,6 @@ export const getRenderableDemo = createServerFn({ method: 'GET' }).handler(
     return { Renderable }
   },
 )
-
-/* -------------------------------------------------------------------------- */
-/* 2. A composite server component with client-filled slots                   */
-/* -------------------------------------------------------------------------- */
 
 export const getCompositeDemo = createServerFn({ method: 'GET' }).handler(
   async () => {

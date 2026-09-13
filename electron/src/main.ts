@@ -11,9 +11,8 @@ const DEV_SERVER_URL =
   process.env.ELECTRON_RENDERER_URL ?? 'http://localhost:3000'
 
 /**
- * Normally the dev server is used whenever the app is unpackaged. Setting
- * ELECTRON_FORCE_PRODUCTION=1 exercises the real `.output` server without
- * packaging (used by `npm run smoke`).
+ * Unpackaged builds use the dev server. ELECTRON_FORCE_PRODUCTION=1 selects
+ * the real `.output` server instead (used by `npm run smoke`).
  */
 const useDevServer =
   is.dev && process.env.ELECTRON_FORCE_PRODUCTION !== '1'
@@ -27,10 +26,6 @@ const allowedOrigins = new Set<string>()
 const isAllowedOrigin = (origin: string) => allowedOrigins.has(origin)
 
 let mainWindow: BrowserWindow | null = null
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
 
 async function waitForUrl(
   url: string,
@@ -62,8 +57,7 @@ async function resolveRendererUrl(): Promise<string> {
     return DEV_SERVER_URL
   }
 
-  // Production: spawn the self-contained Nitro server from `.output`, then
-  // wait for its health route before pointing the window at it.
+  // Production: start the Nitro server from `.output` and wait for its health route.
   const origin = await startProductionServer()
   await waitForUrl(`${origin}/api/health`)
   return origin
@@ -97,7 +91,6 @@ function createWindow(url: string): BrowserWindow {
 
   window.once('ready-to-show', () => window.show())
 
-  // Never surprise the user with a silent blank window.
   const showFallback = setTimeout(() => {
     if (!window.isDestroyed()) window.show()
   }, 5_000)
@@ -114,10 +107,6 @@ function createWindow(url: string): BrowserWindow {
 
   return window
 }
-
-/* -------------------------------------------------------------------------- */
-/* App lifecycle                                                              */
-/* -------------------------------------------------------------------------- */
 
 // Only one desktop instance — focus the existing window instead of starting
 // a second SSR server on a second port.

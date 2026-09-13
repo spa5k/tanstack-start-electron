@@ -13,10 +13,6 @@ import type {
   ThemeChangedPayload,
 } from '../../src/lib/desktop-contract'
 
-/* -------------------------------------------------------------------------- */
-/* Input validation                                                           */
-/* -------------------------------------------------------------------------- */
-
 /**
  * IPC arguments arrive from a web context. Treat them as untrusted input —
  * the renderer could be compromised by a malicious page or XSS.
@@ -55,10 +51,6 @@ function sanitizeFilters(value: unknown): Array<{ name: string; extensions: Arra
 
   return filters.length > 0 ? filters : undefined
 }
-
-/* -------------------------------------------------------------------------- */
-/* Handlers                                                                   */
-/* -------------------------------------------------------------------------- */
 
 export function registerIpcHandlers(): void {
   ipcMain.handle(
@@ -112,7 +104,6 @@ export function registerIpcHandlers(): void {
     },
   )
 
-  // Push native-theme changes to every open window.
   nativeTheme.on('updated', () => {
     const payload: ThemeChangedPayload = {
       shouldUseDarkColors: nativeTheme.shouldUseDarkColors,

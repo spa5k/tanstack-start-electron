@@ -19,7 +19,8 @@
     "start": "node .output/server/index.mjs",
     "dist": "npm run build && electron-builder",
     "dist:dir": "npm run build && electron-builder --dir",
-    "smoke": "npm run build && cross-env ELECTRON_SMOKE_TEST=1 ELECTRON_FORCE_PRODUCTION=1 electron ."
+    "smoke": "npm run build && cross-env ELECTRON_SMOKE_TEST=1 ELECTRON_FORCE_PRODUCTION=1 electron .",
+    "screenshots": "npm run build && electron scripts/screenshots.cjs"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",

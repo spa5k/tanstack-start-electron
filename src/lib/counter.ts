@@ -3,12 +3,9 @@ import { z } from 'zod'
 import { readCounter, resolveCounterFile, writeCounter } from './counter.server'
 
 /**
- * Server functions are RPC endpoints that are safe to import from any route
- * or component. On the server they run in-process (no HTTP hop during SSR);
- * in the browser they become a typed `fetch()` call.
- *
- * Note that the `.server.ts` import above only ever executes inside these
- * handlers — the client bundle gets a stub.
+ * Server functions are safe to import anywhere. During SSR they run in the
+ * server process; in the browser they become a typed fetch call. The
+ * `.server.ts` import above only executes inside these handlers.
  */
 
 export const getCounter = createServerFn({ method: 'GET' }).handler(

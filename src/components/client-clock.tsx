@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Renders on the client only (mounted *after* hydration). Used together with
- * `<ClientOnly>` so the SSR HTML never contains a timestamp that would differ
- * from the first client render.
+ * Client-only clock. Use it with `<ClientOnly>` so the server HTML and the
+ * first client render match.
  */
 export function ClientClock() {
   const [now, setNow] = useState(() => new Date())

@@ -2,12 +2,8 @@ import { useEffect, useState } from 'react'
 import type { DesktopApi } from './desktop-contract'
 
 /**
- * Returns the Electron bridge, or `null` when the page is rendered:
- *   • on the server during SSR, or
- *   • in a plain browser (`vite dev` without Electron).
- *
- * Read `window` only inside an effect so SSR and the first client render agree
- * — otherwise React throws a hydration mismatch.
+ * The renderer sees this bridge, or `null` during SSR and in a plain browser.
+ * `window` is read inside an effect so SSR and the first client render agree.
  */
 export function useDesktop(): DesktopApi | null {
   const [desktop, setDesktop] = useState<DesktopApi | null>(null)

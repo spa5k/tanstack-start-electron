@@ -6,7 +6,6 @@ import { getCompositeDemo, getRenderableDemo } from '~/lib/rsc-demos'
 
 export const Route = createFileRoute('/server-components')({
   loader: async () => {
-    // Both Flight payloads are produced during SSR, in parallel.
     const [{ Renderable }, { src }] = await Promise.all([
       getRenderableDemo(),
       getCompositeDemo(),
@@ -40,7 +39,6 @@ function ServerComponentsPage() {
         <h2 className="text-sm font-semibold tracking-wide text-slate-300">
           1 · renderServerComponent — no slots
         </h2>
-        {/* A "renderable" is inlined directly like any other React node. */}
         {Renderable}
       </section>
 
