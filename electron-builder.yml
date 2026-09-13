@@ -17,10 +17,12 @@ files:
   - '!node_modules/**'
 
 extraResources:
-  # `.output` is the self-contained Nitro Node server produced by `vite build`.
-  # It lands in `resources/app-server/` next to the ASAR archive.
+  # `.output` holds the fetch handler and the client assets.
   - from: .output
     to: app-server
+  # Child process entry for ELECTRON_USE_HTTP_SERVER=1.
+  - from: build/serve.cjs
+    to: app-server/serve.cjs
 
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 

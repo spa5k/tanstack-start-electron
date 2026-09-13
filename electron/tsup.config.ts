@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     main: 'electron/src/main.ts',
     preload: 'electron/src/preload.ts',
+    serve: 'electron/src/serve.ts',
   },
   outDir: 'build',
   // The repo is `"type": "module"`, so CommonJS output must use `.cjs`.
@@ -19,5 +20,5 @@ export default defineConfig({
   // `electron` is provided by the runtime…
   external: ['electron'],
   // …everything else is inlined so the packaged app needs no node_modules.
-  noExternal: ['get-port-please'],
+  noExternal: ['srvx'],
 })

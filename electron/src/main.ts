@@ -1,6 +1,7 @@
 import { BrowserWindow, app, dialog, shell } from 'electron'
 import { join } from 'node:path'
 import { loadServerHandler } from './handler'
+import { startHttpServer, stopHttpServer } from './http-server'
 import { registerIpcHandlers } from './ipc'
 import { buildApplicationMenu } from './menu'
 import { APP_URL, attachAppProtocol, registerAppScheme } from './protocol'
@@ -29,6 +30,14 @@ const useDevServer =
   (process.env.NODE_ENV === 'development' ||
     Boolean(process.env.ELECTRON_RENDERER_URL))
 const smokeTest = process.env.ELECTRON_SMOKE_TEST === '1'
+
+/**
+ * Optional second production mode. Instead of the `app://` scheme, start the
+ * handler as a child process and load it over loopback HTTP. Cookies and
+ * other web APIs behave as usual, but a local port is open.
+ */
+const useHttpServer =
+  !useDevServer && process.env.ELECTRON_USE_HTTP_SERVER === '1'
 
 registerAppScheme()
 
@@ -80,9 +89,18 @@ async function resolveRendererUrl(): Promise<string> {
     return DEV_SERVER_URL
   }
 
-  // Production: load the SSR handler into this process and answer requests
-  // over the `app://` protocol. No port is opened.
-  const { fetch } = await loadServerHandler()
+  // Production: load the SSR handler into this process and answer the
+  // renderer without a port.
+  process.env.APP_DATA_DIR ??= app.getPath('userData')
+  const { fetch, root } = await loadServerHandler()
+
+  if (useHttpServer) {
+    const origin = await startHttpServer(root)
+    await waitForUrl(`${origin}/api/health`)
+    allowedOrigins.add(new URL(origin).origin)
+    console.log(`[main] loopback HTTP server ready at ${origin}`)
+    return origin
+  }
 
   const health = await fetch(new Request(`${SERVER_ORIGIN}/api/health`))
   if (!health.ok) {
@@ -200,5 +218,9 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
+  })
+
+  app.on('will-quit', () => {
+    stopHttpServer()
   })
 }
