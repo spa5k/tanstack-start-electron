@@ -41,6 +41,7 @@ function OverviewPage() {
             <KeyValue label="rendered at" value={snapshot.renderedAt} />
             <KeyValue label="pid" value={snapshot.pid} />
             <KeyValue label="node" value={snapshot.node} />
+            <KeyValue label="runtime" value={snapshot.runtime} />
             <KeyValue label="platform" value={snapshot.platform} />
             <KeyValue label="uptime" value={`${snapshot.uptimeSeconds}s`} />
             <KeyValue label="rss" value={`${snapshot.memoryRssMb} MB`} />
@@ -70,12 +71,10 @@ function OverviewPage() {
         <Card eyebrow="Lifecycle" title="Request lifecycle">
           <ol className="list-decimal space-y-2 pl-4">
             <li>
-              In development, Electron loads the Vite dev server. In
-              production, it starts{' '}
-              <code className="font-mono text-xs">
-                .output/server/index.mjs
-              </code>{' '}
-              and loads that origin.
+              In production, Electron imports the built handler into the main
+              process and serves the app from{' '}
+              <code className="font-mono text-xs">app://renderer/</code>. No
+              port is opened.
             </li>
             <li>
               The Start server renders the route tree to HTML. It streams each

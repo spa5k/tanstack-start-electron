@@ -15,22 +15,22 @@
     "build:web": "vite build",
     "build:electron": "tsup --config electron/tsup.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p electron/tsconfig.json",
-    "preview": "vite preview",
+    "preview": "node scripts/serve.mjs",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
     "dist:dir": "npm run build && electron-builder --dir",
     "smoke": "npm run build && cross-env NODE_ENV=production ELECTRON_SMOKE_TEST=1 electron .",
     "screenshots": "npm run build && electron scripts/screenshots.cjs",
-    "start:server": "node .output/server/index.mjs"
+    "start:server": "node scripts/serve.mjs"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.35",
     "@tanstack/react-router-devtools": "^1.167.1",
     "@tanstack/react-start": "^1.168.52",
-    "get-port-please": "^3.2.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "srvx": "^1.0.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

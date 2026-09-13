@@ -15,6 +15,9 @@ export const getServerSnapshot = createServerFn({ method: 'GET' }).handler(
       renderedAt: new Date().toISOString(),
       pid: process.pid,
       node: process.version,
+      runtime: process.versions.electron
+        ? `electron ${process.versions.electron} (main process)`
+        : 'node',
       platform: `${process.platform} ${process.arch}`,
       cwd: process.cwd(),
       uptimeSeconds: Math.round(process.uptime()),

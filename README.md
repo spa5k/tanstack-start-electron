@@ -4,6 +4,10 @@ Run TanStack Start v1 inside Electron. This repository gives you server-side ren
 streaming, server functions, server routes, and experimental React Server Components. It also gives
 you a typed IPC bridge with a sandboxed renderer.
 
+In production the app **opens no TCP port** and starts no child process. Electron imports the built
+SSR handler into the main process and answers the renderer over a privileged `app://` scheme. The
+same handler runs on Node for the web version.
+
 The repository has two parts:
 
 1. **A starter.** Run `pnpm dev` to get a desktop app with hot reload. Run `pnpm dist` to get an
@@ -14,7 +18,7 @@ The repository has two parts:
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  Electron (main)                     Electron (renderer / Chromium)     │
-│  ├─ starts the SSR server  ────────► http://127.0.0.1:<random port>     │
+│  ├─ imports the SSR handler          app://renderer/  (no port)         │
 │  │  (.output/server/index.mjs)       ├─ server-rendered HTML (SSR)      │
 │  ├─ window / menu / dialogs          ├─ hydration turns HTML into React │
 │  └─ ipcMain.handle(...)  ◄────────►  └─ window.desktop (contextBridge)  │
@@ -25,8 +29,7 @@ The repository has two parts:
 
 - [Screenshots](#screenshots)
 - [Feature matrix](#feature-matrix)
-- [Requirements](#requirements)
-- [Quick start](#quick-start)
+- [Requirements](#requirements)- [Quick start](#quick-start)
 - [Scripts](#scripts)
 - [Project structure](#project-structure)
 - [Architecture](#architecture)
@@ -43,7 +46,7 @@ The repository has two parts:
   - [React Server Components](#react-server-components)
 - [The Electron side](#the-electron-side)
   - [Main process](#main-process)
-  - [The SSR server child process](#the-ssr-server-child-process)
+  - [The in-process SSR handler](#the-in-process-ssr-handler)
   - [Preload and the typed IPC contract](#preload-and-the-typed-ipc-contract)
   - [IPC or server function?](#ipc-or-server-function)
   - [Security defaults](#security-defaults)
@@ -86,6 +89,7 @@ React Server Components. Server markup wraps client islands:
 | Server functions that write files       | `APP_DATA_DIR=counter.json` in Electron userData    | ✅      |
 | Typed and sandboxed IPC bridge          | `src/lib/desktop-contract.ts`, preload              | ✅      |
 | Hot reload for renderer and main process | `pnpm dev`                                         | ✅      |
+| No open ports in production             | `electron/src/protocol.ts` (`app://` scheme)        | ✅      |
 | Self-contained production server        | `.output/` (Nitro `node-server`, about 2 MB)        | ✅      |
 | Packaging for macOS, Windows, and Linux | `electron-builder.yml`                              | ✅      |
 | End-to-end smoke test in Electron       | `pnpm smoke`                                        | ✅      |
@@ -114,7 +118,7 @@ pnpm dev
 | ------------ | ------------------------ | --------------- |
 | Vite dev SSR | `vite dev`               | `3000`          |
 | Main bundle  | `tsup --watch`           | —               |
-| Desktop app  | `nodemon` → `electron .` | random loopback |
+| Desktop app  | `nodemon` → `electron .` | —               |
 
 Electron asks `http://localhost:3000` until Vite answers. Then it opens the window. Open the network
 tab and reload the page. The HTML comes from the SSR server, not from a static `index.html` file.
@@ -144,9 +148,9 @@ pnpm dist       # makes installers in release/
 | `pnpm dist`           | Packages installers for the current platform                              |
 | `pnpm dist:dir`       | Packages an unpacked app directory (fast, for tests)                       |
 | `pnpm start`          | Builds, then runs the desktop app on the built server                      |
-| `pnpm start:server`   | Runs the production SSR server alone (`node .output/server/index.mjs`)    |
+| `pnpm start:server`   | Runs the built handler on Node (`node scripts/serve.mjs`)                  |
 | `pnpm screenshots`    | Builds, then saves the README screenshots to `screenshots/`                |
-| `pnpm preview`        | Runs the Vite preview server over the production build                    |
+| `pnpm preview`        | Runs `start:server` (the built handler on Node)                           |
 
 Environment variables:
 
@@ -163,7 +167,8 @@ tanstack-start-electron/
 ├── electron/
 │   ├── src/
 │   │   ├── main.ts          # app lifecycle, window, navigation guards
-│   │   ├── server.ts        # starts .output/server/index.mjs (ELECTRON_RUN_AS_NODE)
+│   │   ├── handler.ts       # loads .output/server/index.mjs into the main process
+│   │   ├── protocol.ts      # app:// scheme → in-process fetch handler
 │   │   ├── ipc.ts           # ipcMain.handle and input validation
 │   │   ├── menu.ts          # application menu
 │   │   ├── preload.ts       # contextBridge → window.desktop
@@ -191,6 +196,9 @@ tanstack-start-electron/
 │   ├── router.tsx
 │   ├── server.ts                # optional custom server entry
 │   └── styles/app.css           # Tailwind v4
+├── scripts/
+│   ├── serve.mjs            # serves the built handler on Node (web deployment)
+│   └── screenshots.cjs      # saves the README screenshots
 ├── vite.config.ts
 ├── electron-builder.yml
 ├── nodemon.json
@@ -214,15 +222,16 @@ This is sufficient until you need one of these features:
 - **One code base for desktop and web** — the same server functions run on Node, Cloudflare, and
   Netlify.
 
-Electron uses `file://` and HTTP. TanStack Start uses a `fetch` handler. So the build makes a
-**self-contained Node server**, and Electron becomes its host:
+Electron cannot load a TanStack Start `fetch` handler directly. So the build makes **one fetch
+handler**, and Electron hosts it in the main process. The window loads a privileged custom scheme,
+`app://renderer/`. The protocol handler answers each request from the fetch handler.
 
-1. Electron picks a free loopback port.
-2. Electron starts the server.
-3. Electron waits for `/api/health`.
-4. Electron points the `BrowserWindow` at the server.
+This has three results:
 
-All requests stay on `127.0.0.1`.
+1. **No open port.** Nothing listens on TCP in production.
+2. **No child process.** The handler is a module that the main process imports.
+3. **Electron APIs in server code.** Server functions run in the main process, so they can use
+   `electron` modules directly. Guard those imports if you also deploy the web version.
 
 ### Development mode
 
@@ -242,13 +251,13 @@ pnpm dev
 
 ### Production mode
 
-`pnpm start` builds the app and opens it on the built server. You can also run the steps by hand:
+`pnpm start` builds the app and opens it on the in-process handler:
 
 ```
 pnpm build
   ├─ vite build
   │    ├─ .output/public/          # client assets (HTML entry, JS, CSS)
-  │    ├─ .output/server/index.mjs # Node server (Nitro node-server preset)
+  │    ├─ .output/server/index.mjs # fetch handler (Nitro `standard` preset)
   │    └─ .output/nitro.json
   └─ tsup → build/main.cjs, build/preload.cjs
 
@@ -263,34 +272,38 @@ pnpm dist → electron-builder
 
 The app selects the renderer like this:
 
-| Condition                             | Renderer used          |
-| ------------------------------------- | ---------------------- |
-| Packaged app                          | built `.output` server |
-| `NODE_ENV=development` (`pnpm dev`)   | Vite dev server        |
-| `ELECTRON_RENDERER_URL` is set        | that URL               |
-| Anything else, including `pnpm start` | built `.output` server |
+| Condition                             | Renderer used                  |
+| ------------------------------------- | ------------------------------ |
+| Packaged app                          | `app://renderer/` in-process   |
+| `NODE_ENV=development` (`pnpm dev`)   | Vite dev server                |
+| `ELECTRON_RENDERER_URL` is set        | that URL                       |
+| Anything else, including `pnpm start` | `app://renderer/` in-process   |
 
-The built server supports every feature: SSR, streaming, server functions, server routes, RSC, and
-the IPC bridge. `pnpm smoke` checks them on the built server.
+The built handler supports every feature: SSR, streaming, server functions, server routes, RSC, and
+the IPC bridge. `pnpm smoke` checks all of them on the built handler.
 
 At runtime, the app does these steps:
 
-1. `electron/src/server.ts` finds the server entry. An unpackaged run uses `.output`. A packaged app
-   uses `resources/app-server`.
-2. It asks `get-port-please` for a free port in the range `30011–50000`.
-3. It starts **the Electron binary in Node mode**:
+1. `electron/src/handler.ts` imports `.output/server/index.mjs` into the main process. An unpackaged
+   run uses the project `.output`. A packaged app uses `resources/app-server`.
+2. The main process calls the handler for `/api/health`. The check must pass before the window opens.
+3. `electron/src/protocol.ts` registers a privileged `app://` scheme. Every request for that scheme
+   goes to the handler.
+4. The window loads `app://renderer/`.
 
-   ```bash
-   ELECTRON_RUN_AS_NODE=1 <path-to-electron> .output/server/index.mjs
-   ```
+No port is opened and no child process is started. You can confirm this while the app runs:
 
-   You do not need Node on the user machine. Electron contains the runtime.
-4. It passes this environment to the child process:
-   - `PORT` and `NITRO_PORT`, with `HOST=127.0.0.1`
-   - `APP_DATA_DIR=<app.getPath('userData')>` so server functions can write files
-   - `NODE_ENV=production`
-5. The main process waits for `/api/health`. Then it loads `http://127.0.0.1:<port>`.
-6. On `will-quit`, and on process exit, the app kills the child process.
+```bash
+lsof -a -p "$(pgrep -f 'Contents/MacOS/Electron' | tr '\n' ',' | sed 's/,$//')" \
+  -iTCP -sTCP:LISTEN -P -n
+```
+
+The command prints no rows.
+
+> **The synthetic origin.** TanStack Start normalizes URLs with `new URL(...)`. Custom schemes have a
+> `"null"` origin, so the protocol layer gives the handler `http://localhost` as its origin. It also
+> rewrites the `Origin` and `Referer` headers to match. The built-in CSRF middleware then sees a
+> normal same-origin request.
 
 ## The web app
 
@@ -362,7 +375,8 @@ React sends the shell immediately. It sends the resolved boundary later in the s
 > browser user-agent. Electron's Chromium sends a browser user-agent.
 
 ```bash
-curl -N -A "Mozilla/5.0 Chrome/140" http://127.0.0.1:<port>/ssr
+pnpm start:server &  # http://127.0.0.1:3000
+curl -N -A "Mozilla/5.0 Chrome/140" http://127.0.0.1:3000/ssr
 ```
 
 ### Server functions
@@ -457,32 +471,33 @@ cache. Call `router.invalidate()` after a mutation. With TanStack Query, set
 
 `electron/src/main.ts` is small and careful:
 
-- **Single instance lock** — a second launch focuses the open window. It does not start a second SSR
-  server.
-- **`waitForUrl`** — polls with a timeout. A slow dev server or a slow packaged server never gives
-  an empty window.
+- **Single instance lock** — a second launch focuses the open window. It does not load the handler
+  twice.
+- **`waitForUrl`** — polls with a timeout. A slow dev server never gives an empty window.
 - **Navigation guard** — `web-contents-created` blocks navigation to other origins. It sends
   `window.open` targets to the operating system browser.
-- **Graceful shutdown** — `will-quit` and `process.once('exit')` kill the SSR child process.
 
-### The SSR server child process
+### The in-process SSR handler
+
+`electron/src/handler.ts` imports the built handler. It is ESM, so the CJS main bundle uses a
+dynamic `import()`:
 
 ```ts
-const child = spawn(process.execPath, [entry], {
-  env: {
-    ...process.env,
-    ELECTRON_RUN_AS_NODE: '1',
-    NODE_ENV: 'production',
-    PORT: String(port),
-    HOST: '127.0.0.1',
-    APP_DATA_DIR: app.getPath('userData'),
-  },
-  stdio: ['ignore', 'pipe', 'pipe'],
-})
+const module = await import(pathToFileURL(entry).href)
+const { fetch } = module.default
 ```
 
-The app adds `[ssr]` to the server output and sends it to the main console. This helps when a server
-function throws in a packaged app.
+The Nitro `standard` preset makes the handler export exactly `default { fetch }` and keeps static
+asset serving in the bundle. `pnpm start:server` uses the same handler on Node through `srvx`.
+
+`electron/src/protocol.ts` does three jobs:
+
+1. It registers `app://` as a privileged, standard, secure scheme before the app is ready.
+2. It rewrites each `app://renderer/...` request into a normal request for the handler.
+3. It keeps the origin consistent (see [Production mode](#production-mode)).
+
+Streaming works through the protocol. `pnpm smoke` measures the first byte and the full response of
+an SSR page and fails if the handler buffers.
 
 ### Preload and the typed IPC contract
 
@@ -570,14 +585,14 @@ Platform targets are in `electron-builder.yml` (`dmg` and `zip`, `nsis`, `AppIma
 distribution, add an app icon (`build-resources/icon.png`, 512×512 or larger) and code signing
 configuration. See the [electron-builder docs](https://www.electron.build/).
 
-> **The app does not use `file://`.** The renderer always loads from `http://127.0.0.1:<port>`. SSR,
-> server functions, RSC, and streaming need a real HTTP origin. This also removes `file://` CORS
-> problems. Cookies work, and `fetch('/api/...')` is valid.
+> **The app does not use `file://`.** The renderer loads the privileged `app://renderer/` origin.
+> SSR, server functions, RSC, and streaming need a real origin. The custom scheme gives the page
+> modules, `fetch`, history and streaming, with no open port.
 
 ## Smoke test
 
-`pnpm smoke` builds the app. Then it uses the production server path, even when the app is not
-packaged. Then it drives the real renderer through `webContents.executeJavaScript`:
+`pnpm smoke` builds the app and runs it on the production handler. Then it drives the real renderer
+through `webContents.executeJavaScript`:
 
 ```
 ✔ SSR HTML contains the hero heading
@@ -585,10 +600,12 @@ packaged. Then it drives the real renderer through `webContents.executeJavaScrip
 ✔ client-side navigation + server function mutation
 ✔ React Server Components route renders
 ✔ streamed deferred data arrives
+✔ streaming is not buffered
 ```
 
-One run tests the Nitro server, SSR, hydration, TanStack Router client navigation, server-function
-RPC, the RSC Flight pipeline, streaming, and the preload bridge. Use it in CI on Linux with
+One run tests the in-process handler, SSR, hydration, TanStack Router client navigation,
+server-function RPC, the RSC Flight pipeline, streaming over the protocol, and the preload bridge.
+It also reads the first-byte and full-response times of an SSR page. Use it in CI on Linux with
 `xvfb-run -a pnpm smoke`.
 
 To run the same checks against the dev server:
@@ -610,15 +627,14 @@ ELECTRON_SMOKE_TEST=1 npx electron . # uses the running dev server
 | RSC build errors after an upgrade | RSC is experimental. Keep `@tanstack/react-start`, `@vitejs/plugin-rsc`, and `react-server-dom-webpack` at the versions in `package.json`. |
 | `verbatimModuleSyntax` warning | Keep this option disabled for TanStack Start. |
 | Empty window in development | Electron waits up to 60 s for the dev URL. Look at the `[web]` lines in the `pnpm dev` output. |
-| A stale SSR server stays after a hard kill | `server.ts` kills the child on `will-quit` and on process exit. After `kill -9`, run `pkill -f .output/server/index.mjs`. |
 | electron-builder warns about `duplicate dependency references` or platform binaries | This is safe here. The package contains no `node_modules`, so the warning only concerns build tools. |
 
 ## Deploying the web version
 
 Only the `electron/` directory is Electron-specific. The same `vite build` output goes to any Nitro
-target. Add or change a preset in `vite.config.ts`:
+target. The `standard` preset in this repository exports a fetch handler:
 
-- **Node, Docker, Railway** — the preset in this repository: `node .output/server/index.mjs`
+- **Node, Docker, Railway** — `node scripts/serve.mjs` (uses `srvx`)
 - **Cloudflare** — `@cloudflare/vite-plugin` and `wrangler.jsonc`
 - **Netlify or Vercel** — the matching Nitro preset or first-party Vite plugin
 

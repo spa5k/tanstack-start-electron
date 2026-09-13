@@ -1,13 +1,17 @@
 import { BrowserWindow, app, dialog, shell } from 'electron'
 import { join } from 'node:path'
+import { loadServerHandler } from './handler'
 import { registerIpcHandlers } from './ipc'
 import { buildApplicationMenu } from './menu'
-import { startProductionServer, stopProductionServer } from './server'
+import { APP_URL, attachAppProtocol, registerAppScheme } from './protocol'
 import { runSmokeTest } from './smoke'
 
 /** The renderer URL for `vite dev`. Override with ELECTRON_RENDERER_URL. */
 const DEV_SERVER_URL =
   process.env.ELECTRON_RENDERER_URL ?? 'http://localhost:3000'
+
+/** A synthetic origin for the in-process handler. No socket is opened. */
+const SERVER_ORIGIN = 'http://localhost'
 
 /**
  * The dev server is used only when a developer asks for it:
@@ -16,8 +20,8 @@ const DEV_SERVER_URL =
  *   • ELECTRON_RENDERER_URL points at a running dev server.
  *
  * Every other run — including an unpackaged run after `pnpm build` — uses the
- * built `.output` server. ELECTRON_FORCE_PRODUCTION=1 forces that path too.
- * A packaged app always uses the built server.
+ * in-process handler. ELECTRON_FORCE_PRODUCTION=1 forces that path too.
+ * A packaged app always uses the in-process handler.
  */
 const useDevServer =
   !app.isPackaged &&
@@ -26,14 +30,24 @@ const useDevServer =
     Boolean(process.env.ELECTRON_RENDERER_URL))
 const smokeTest = process.env.ELECTRON_SMOKE_TEST === '1'
 
+registerAppScheme()
+
 /**
  * Origins the renderer is allowed to navigate to. Anything else is opened in
  * the user's browser instead of inside the app shell.
  */
 const allowedOrigins = new Set<string>()
-const isAllowedOrigin = (origin: string) => allowedOrigins.has(origin)
-
 let mainWindow: BrowserWindow | null = null
+let protocolAttached = false
+
+function isAllowedNavigation(url: string): boolean {
+  if (url.startsWith(APP_URL)) return true
+  try {
+    return allowedOrigins.has(new URL(url).origin)
+  } catch {
+    return false
+  }
+}
 
 async function waitForUrl(
   url: string,
@@ -62,18 +76,32 @@ async function resolveRendererUrl(): Promise<string> {
   if (useDevServer) {
     // `vite dev` may still be booting — poll until it answers.
     await waitForUrl(DEV_SERVER_URL)
+    allowedOrigins.add(new URL(DEV_SERVER_URL).origin)
     return DEV_SERVER_URL
   }
 
-  // Production: start the Nitro server from `.output` and wait for its health route.
-  const origin = await startProductionServer()
-  await waitForUrl(`${origin}/api/health`)
-  return origin
+  // Production: load the SSR handler into this process and answer requests
+  // over the `app://` protocol. No port is opened.
+  const { fetch } = await loadServerHandler()
+
+  const health = await fetch(new Request(`${SERVER_ORIGIN}/api/health`))
+  if (!health.ok) {
+    throw new Error(`The SSR handler health check failed: HTTP ${health.status}`)
+  }
+  const payload = (await health.json()) as { pid?: number }
+  console.log(
+    `[main] in-process SSR handler ready (pid ${payload.pid ?? 'unknown'})`,
+  )
+
+  if (!protocolAttached) {
+    attachAppProtocol(fetch, SERVER_ORIGIN)
+    protocolAttached = true
+  }
+
+  return APP_URL
 }
 
 function createWindow(url: string): BrowserWindow {
-  allowedOrigins.add(new URL(url).origin)
-
   const window = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -116,8 +144,8 @@ function createWindow(url: string): BrowserWindow {
   return window
 }
 
-// Only one desktop instance — focus the existing window instead of starting
-// a second SSR server on a second port.
+// Only one desktop instance — focus the existing window instead of loading
+// the handler twice.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
@@ -136,8 +164,7 @@ if (!app.requestSingleInstanceLock()) {
     })
 
     contents.on('will-navigate', (event, url) => {
-      const target = new URL(url)
-      if (target.origin !== 'null' && isAllowedOrigin(target.origin)) return
+      if (isAllowedNavigation(url)) return
       event.preventDefault()
       void shell.openExternal(url)
     })
@@ -173,9 +200,5 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
-  })
-
-  app.on('will-quit', () => {
-    stopProductionServer()
   })
 }

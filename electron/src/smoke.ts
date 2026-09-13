@@ -1,5 +1,4 @@
 import { app, type BrowserWindow } from 'electron'
-import { stopProductionServer } from './server'
 
 /**
  * A headless end-to-end check for CI. It drives the real renderer through
@@ -20,6 +19,8 @@ interface SmokeResult {
   rscText: string | null
   rscPreview: string
   streamedText: string | null
+  streamFirstByteMs: number
+  streamTotalMs: number
 }
 
 const rendererScript = /* js */ `
@@ -46,6 +47,8 @@ const rendererScript = /* js */ `
     rscText: null,
     rscPreview: '',
     streamedText: null,
+    streamFirstByteMs: 0,
+    streamTotalMs: 0,
   }
 
   if (window.desktop) {
@@ -83,6 +86,19 @@ const rendererScript = /* js */ `
     ? 'deferred chunk streamed'
     : null
 
+  // Streaming over the app protocol. The first byte must arrive well before
+  // the 1.5s slow server function finishes.
+  const streamStarted = performance.now()
+  const streamResponse = await fetch('/ssr')
+  const reader = streamResponse.body.getReader()
+  await reader.read()
+  result.streamFirstByteMs = Math.round(performance.now() - streamStarted)
+  for (;;) {
+    const { done } = await reader.read()
+    if (done) break
+  }
+  result.streamTotalMs = Math.round(performance.now() - streamStarted)
+
   return result
 })()
 `
@@ -110,6 +126,13 @@ const checks: Array<{ label: string; ok: (result: SmokeResult) => boolean }> = [
   {
     label: 'streamed deferred data arrives',
     ok: (result) => result.streamedText === 'deferred chunk streamed',
+  },
+  {
+    label: 'streaming is not buffered',
+    ok: (result) =>
+      result.streamFirstByteMs > 0 &&
+      result.streamFirstByteMs < 800 &&
+      result.streamTotalMs > 1_200,
   },
 ]
 
@@ -144,11 +167,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<void> {
         : `\n${failed} smoke check(s) failed.\n`,
     )
 
-    stopProductionServer()
     app.exit(failed === 0 ? 0 : 1)
   } catch (error) {
     console.error('Smoke test crashed:', error)
-    stopProductionServer()
     app.exit(1)
   }
 }

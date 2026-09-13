@@ -33,8 +33,13 @@ export default defineConfig({
     // React's Vite plugin must come after Start's plugin.
     viteReact(),
 
-    // Emits `.output/server/index.mjs` plus `.output/public` — a completely
-    // self-contained Node server that Electron spawns in production.
-    nitro(),
+    // Emits `.output/server/index.mjs` (a fetch handler) plus
+    // `.output/public`. Electron calls the handler in-process, so production
+    // needs no open port. The `standard` preset exports the handler;
+    // `serveStatic: true` keeps asset serving inside the bundle.
+    nitro({
+      preset: 'standard',
+      serveStatic: true,
+    }),
   ],
 })
