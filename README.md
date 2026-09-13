@@ -1,22 +1,22 @@
 # TanStack Start × Electron
 
-> **TanStack Start v1 running inside Electron** with SSR, streaming, server functions, server
-> routes and experimental React Server Components — plus a typed, sandboxed IPC bridge.
+Run TanStack Start v1 inside Electron. This repository gives you server-side rendering (SSR),
+streaming, server functions, server routes, and experimental React Server Components. It also gives
+you a typed IPC bridge with a sandboxed renderer.
 
-This is the successor to [`nextjs_approuter_electron`](https://github.com/spa5k/nextjs_approuter_electron)
-and it is two things at once:
+The repository has two parts:
 
-1. **A runnable starter** — `pnpm dev` gives you a hot-reloading desktop app; `pnpm dist` gives you a
-   ready-to-package installer. Every piece has been built, packaged and smoke-tested.
-2. **A guide** — this document explains how the pieces fit together, why they are arranged this
-   way, and how to extend the setup.
+1. **A starter.** Run `pnpm dev` to get a desktop app with hot reload. Run `pnpm dist` to get an
+   installer. All parts are built, packaged, and tested.
+2. **A guide.** This document explains how the parts work together. It also explains how to extend
+   them.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  Electron (main)                     Electron (renderer / Chromium)     │
-│  ├─ spawns the SSR server  ───────►  http://127.0.0.1:<random port>     │
+│  ├─ starts the SSR server  ────────► http://127.0.0.1:<random port>     │
 │  │  (.output/server/index.mjs)       ├─ server-rendered HTML (SSR)      │
-│  ├─ window / menu / dialogs          ├─ hydrates into a React app       │
+│  ├─ window / menu / dialogs          ├─ hydration turns HTML into React │
 │  └─ ipcMain.handle(...)  ◄────────►  └─ window.desktop (contextBridge)  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -58,28 +58,28 @@ and it is two things at once:
 | Capability                              | Where                                              | Status |
 | --------------------------------------- | -------------------------------------------------- | ------ |
 | File-based routing                      | `src/routes/**` (TanStack Router)                   | ✅      |
-| SSR + hydration                         | `src/routes/__root.tsx`, `defaultStreamHandler`     | ✅      |
-| Streaming SSR + deferred data           | `src/routes/ssr.tsx` (`<Await>`)                    | ✅      |
+| SSR and hydration                       | `src/routes/__root.tsx`, `defaultStreamHandler`     | ✅      |
+| Streaming SSR and deferred data         | `src/routes/ssr.tsx` (`<Await>`)                    | ✅      |
 | Server functions (typed RPC)            | `src/lib/*.ts` (`createServerFn`)                   | ✅      |
-| Server-only modules + import protection | `src/lib/counter.server.ts`                         | ✅      |
-| Server routes (raw HTTP)                | `src/routes/api/health.ts`                          | ✅      |
+| Server-only modules and import protection | `src/lib/counter.server.ts`                       | ✅      |
+| Server routes (plain HTTP)              | `src/routes/api/health.ts`                          | ✅      |
 | React Server Components (experimental)  | `src/routes/server-components.tsx`                  | ✅      |
-| Server functions writing real files     | `APP_DATA_DIR=counter.json` in Electron userData    | ✅      |
-| Typed, sandboxed IPC bridge             | `src/lib/desktop-contract.ts`, preload              | ✅      |
-| Hot reload (renderer + main process)    | `pnpm dev`                                          | ✅      |
-| Self-contained production server        | `.output/` (Nitro `node-server`, ~2 MB)             | ✅      |
-| Packaging for macOS / Windows / Linux   | `electron-builder.yml`                              | ✅      |
+| Server functions that write files       | `APP_DATA_DIR=counter.json` in Electron userData    | ✅      |
+| Typed and sandboxed IPC bridge          | `src/lib/desktop-contract.ts`, preload              | ✅      |
+| Hot reload for renderer and main process | `pnpm dev`                                         | ✅      |
+| Self-contained production server        | `.output/` (Nitro `node-server`, about 2 MB)        | ✅      |
+| Packaging for macOS, Windows, and Linux | `electron-builder.yml`                              | ✅      |
 | End-to-end smoke test in Electron       | `pnpm smoke`                                        | ✅      |
 
 ## Requirements
 
-- **Node.js 22+** (built and tested on Node 26)
-- **pnpm 11+** (npm/yarn/bun work too, but `pnpm install` is what CI should use)
-- macOS, Windows or Linux for development; any of the three for packaging
+- **Node.js 22 or newer.** This project is built and tested on Node 26.
+- **pnpm 11 or newer.** You can also use npm, yarn, or bun. Use pnpm in CI.
+- **macOS, Windows, or Linux** for development. You can package the app for all three systems.
 
-> **Why does this repo have its own `pnpm-workspace.yaml`?** It keeps the project a single-package
-> workspace with explicit `allowBuilds` approvals (pnpm 11 blocks postinstall scripts by default),
-> so `pnpm install` behaves identically on a clean clone and in CI.
+> **Note about `pnpm-workspace.yaml`:** This file keeps the project as a single package. It also
+> lists the packages that can run build scripts (`allowBuilds`). pnpm 11 blocks postinstall scripts
+> by default. With this file, `pnpm install` works the same on a clean clone and in CI.
 
 ## Quick start
 
@@ -89,49 +89,49 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` starts three things at once:
+`pnpm dev` starts three processes at the same time:
 
-| Process      | Command                    | Port              |
-| ------------ | -------------------------- | ----------------- |
-| Vite dev SSR | `vite dev`                 | `3000`            |
-| Main bundle  | `tsup --watch`             | —                 |
-| Desktop app  | `nodemon` → `electron .`   | random loopback   |
+| Process      | Command                  | Port            |
+| ------------ | ------------------------ | --------------- |
+| Vite dev SSR | `vite dev`               | `3000`          |
+| Main bundle  | `tsup --watch`           | —               |
+| Desktop app  | `nodemon` → `electron .` | random loopback |
 
-Electron polls `http://localhost:3000` until Vite answers, then opens a window. Turn on the
-network tab and reload: the HTML comes from the SSR server, not from a static `index.html`.
+Electron asks `http://localhost:3000` until Vite answers. Then it opens the window. Open the network
+tab and reload the page. The HTML comes from the SSR server, not from a static `index.html` file.
 
-Then build the real thing:
+Now build the real app:
 
 ```bash
-pnpm build      # .output/ (SSR server) + build/ (main + preload)
-pnpm smoke      # builds, boots the production server, drives the UI, asserts the result
-pnpm dist       # electron-builder installers into release/
+pnpm build      # makes .output/ (SSR server) and build/ (main and preload scripts)
+pnpm smoke      # builds, starts the production server, drives the UI, and checks the result
+pnpm dist       # makes installers in release/
 ```
 
 ## Scripts
 
-| Script                    | What it does                                                              |
-| ------------------------- | ------------------------------------------------------------------------- |
-| `pnpm dev`                | Vite + tsup watch + Electron together                                     |
-| `pnpm dev:web`            | Vite dev server only (`http://localhost:3000`)                            |
-| `pnpm dev:desktop`        | Electron main build/watch + app                                            |
-| `pnpm build`              | `build:web` then `build:electron`                                          |
-| `pnpm build:web`          | `vite build` → `.output/` (Nitro `node-server` preset)                     |
-| `pnpm build:electron`     | `tsup` → `build/main.cjs`, `build/preload.cjs`                             |
-| `pnpm typecheck`          | TypeScript 7 for the web app **and** the Electron code                     |
-| `pnpm smoke`              | Build everything and run the end-to-end check inside Electron             |
-| `pnpm dist`               | Package installers for the current platform                               |
-| `pnpm dist:dir`           | Package an unpacked `.app` / directory (fast iteration)                   |
-| `pnpm start`              | Run the production SSR server standalone (`node .output/server/index.mjs`) |
-| `pnpm preview`            | Vite's preview server over the production build                           |
+| Script                | What it does                                                              |
+| --------------------- | ------------------------------------------------------------------------- |
+| `pnpm dev`            | Runs Vite, tsup watch, and Electron together                              |
+| `pnpm dev:web`        | Runs the Vite dev server only (`http://localhost:3000`)                   |
+| `pnpm dev:desktop`    | Builds and watches the Electron main process, and runs the app            |
+| `pnpm build`          | Runs `build:web`, then `build:electron`                                   |
+| `pnpm build:web`      | Runs `vite build` and writes `.output/` (Nitro `node-server` preset)      |
+| `pnpm build:electron` | Runs `tsup` and writes `build/main.cjs` and `build/preload.cjs`           |
+| `pnpm typecheck`      | Checks the web app and the Electron code with TypeScript 7                 |
+| `pnpm smoke`          | Builds everything and runs the end-to-end check inside Electron           |
+| `pnpm dist`           | Packages installers for the current platform                              |
+| `pnpm dist:dir`       | Packages an unpacked app directory (fast, for tests)                       |
+| `pnpm start`          | Runs the production SSR server alone (`node .output/server/index.mjs`)    |
+| `pnpm preview`        | Runs the Vite preview server over the production build                    |
 
-Useful environment variables:
+Environment variables:
 
-| Variable                      | Effect                                                                       |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| `ELECTRON_RENDERER_URL`       | Load a different dev URL (default `http://localhost:3000`)                    |
-| `ELECTRON_FORCE_PRODUCTION=1` | Use the built `.output` server even when the app is unpackaged                |
-| `ELECTRON_SMOKE_TEST=1`       | Run the smoke test and exit with a non-zero code on failure                   |
+| Variable                      | Effect                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `ELECTRON_RENDERER_URL`       | Loads a different dev URL (default `http://localhost:3000`)             |
+| `ELECTRON_FORCE_PRODUCTION=1` | Uses the built `.output` server even when the app is not packaged       |
+| `ELECTRON_SMOKE_TEST=1`       | Runs the smoke test and exits with a non-zero code on failure           |
 
 ## Project structure
 
@@ -140,28 +140,28 @@ tanstack-start-electron/
 ├── electron/
 │   ├── src/
 │   │   ├── main.ts          # app lifecycle, window, navigation guards
-│   │   ├── server.ts        # spawns .output/server/index.mjs (ELECTRON_RUN_AS_NODE)
-│   │   ├── ipc.ts           # ipcMain.handle + input validation
+│   │   ├── server.ts        # starts .output/server/index.mjs (ELECTRON_RUN_AS_NODE)
+│   │   ├── ipc.ts           # ipcMain.handle and input validation
 │   │   ├── menu.ts          # application menu
 │   │   ├── preload.ts       # contextBridge → window.desktop
-│   │   └── smoke.ts         # end-to-end assertions driven inside the renderer
-│   ├── tsup.config.ts       # main/preload → build/*.cjs (no node_modules required)
+│   │   └── smoke.ts         # end-to-end checks driven inside the renderer
+│   ├── tsup.config.ts       # main and preload → build/*.cjs (no node_modules needed)
 │   └── tsconfig.json
 ├── src/
-│   ├── components/          # UI + the IPC playground and client islands
+│   ├── components/          # UI, the IPC playground, and client islands
 │   ├── lib/
 │   │   ├── counter.server.ts    # *.server.ts = never bundled for the browser
 │   │   ├── counter.ts           # createServerFn RPC endpoints
-│   │   ├── report.ts            # slow server function used to demo streaming
-│   │   ├── rsc-demos.tsx        # renderServerComponent / createCompositeComponent
+│   │   ├── report.ts            # slow server function for the streaming demo
+│   │   ├── rsc-demos.tsx        # renderServerComponent and createCompositeComponent
 │   │   ├── server-info.ts       # reads request headers during SSR
-│   │   ├── desktop-contract.ts  # shared IPC contract (types + channel names)
+│   │   ├── desktop-contract.ts  # shared IPC contract (types and channel names)
 │   │   └── desktop-client.ts    # useDesktop() — SSR-safe bridge access
 │   ├── routes/
 │   │   ├── __root.tsx           # document shell, nav, devtools
-│   │   ├── index.tsx            # overview + SSR snapshot
+│   │   ├── index.tsx            # overview and SSR snapshot
 │   │   ├── ssr.tsx              # deferred data streamed into the page
-│   │   ├── server-functions.tsx # filesystem-backed counter + zod validation
+│   │   ├── server-functions.tsx # filesystem counter and zod validation
 │   │   ├── server-components.tsx# RSC demos
 │   │   └── api/health.ts        # server route used as a readiness probe
 │   ├── routeTree.gen.ts         # generated by the router plugin
@@ -172,28 +172,34 @@ tanstack-start-electron/
 ├── electron-builder.yml
 ├── nodemon.json
 ├── Makefile
-└── pnpm-workspace.yaml          # keeps this folder standalone
+└── pnpm-workspace.yaml          # keeps the project as a single package
 ```
 
 ## Architecture
 
 ### Why run a server inside a desktop app?
 
-Electron apps are usually static SPAs: `loadFile('index.html')` and everything runs in Chromium.
-That works until you need:
+Most Electron apps are static SPAs. They call `loadFile('index.html')` and all code runs in Chromium.
+This is sufficient until you need one of these features:
 
-- **Real server rendering** — faster first paint, SEO-grade HTML, no client-side data waterfall.
-- **Secrets and privileged data** — database URLs, API keys, license checks.
-- **Heavy dependencies off the client** — markdown parsers, syntax highlighters, PDF tooling.
-- **Server functions** — colocated, typed data access without inventing an HTTP API.
-- **React Server Components** — server-rendered components with client islands.
-- **Code you can also deploy to the web** — the exact same `src/lib` server functions run on Node,
-  Cloudflare, Netlify, etc.
+- **Server rendering** — the first paint is faster and the HTML is complete.
+- **Secrets and private data** — the app can use database URLs, API keys, and license checks.
+- **Large dependencies off the client** — markdown parsers and PDF tools stay on the server.
+- **Server functions** — you read data without an HTTP API.
+- **React Server Components** — the server renders components and the client keeps small
+  interactive parts.
+- **One code base for desktop and web** — the same server functions run on Node, Cloudflare, and
+  Netlify.
 
-The catch is that Electron speaks `file://` and HTTP — not TanStack Start's `fetch` handler. So the
-build produces a **self-contained Node server** and Electron becomes its host: it picks a free
-loopback port, spawns the server, waits for `/api/health`, and points the `BrowserWindow` at it.
-Requests never leave `127.0.0.1`.
+Electron uses `file://` and HTTP. TanStack Start uses a `fetch` handler. So the build makes a
+**self-contained Node server**, and Electron becomes its host:
+
+1. Electron picks a free loopback port.
+2. Electron starts the server.
+3. Electron waits for `/api/health`.
+4. Electron points the `BrowserWindow` at the server.
+
+All requests stay on `127.0.0.1`.
 
 ### Development mode
 
@@ -204,10 +210,10 @@ pnpm dev
   └─ nodemon watches build/ → restarts electron
 ```
 
-- The renderer gets full Vite HMR; editing a route or a component updates instantly.
-- Editing `electron/src/*.ts` rebuilds the main bundle and nodemon restarts the app.
-- `electron/src/main.ts` calls `waitForUrl('http://localhost:3000')` before opening the window, so
-  you never see a blank window while Vite boots.
+- The renderer uses full Vite HMR. A change to a route or a component appears immediately.
+- A change to `electron/src/*.ts` rebuilds the main bundle. Then nodemon restarts the app.
+- `electron/src/main.ts` calls `waitForUrl('http://localhost:3000')` before it opens the window. So
+  you never see an empty window while Vite starts.
 
 ### Production mode
 
@@ -223,46 +229,46 @@ pnpm dist → electron-builder
   ├─ app.asar
   │    ├─ build/main.cjs, build/preload.cjs
   │    └─ package.json                # no node_modules at all
-  └─ resources/app-server/            # ← .output copied via extraResources
+  └─ resources/app-server/            # ← .output copied with extraResources
        ├─ public/
        └─ server/index.mjs
 ```
 
-At runtime:
+At runtime, the app does these steps:
 
-1. `electron/src/server.ts` finds the server entry (`.output` in dev, `resources/app-server` when
-   packaged).
-2. It asks `get-port-please` for a free port in `30011–50000`.
-3. It spawns **Electron's own binary in Node mode**:
+1. `electron/src/server.ts` finds the server entry. In development it uses `.output`. In a package
+   it uses `resources/app-server`.
+2. It asks `get-port-please` for a free port in the range `30011–50000`.
+3. It starts **the Electron binary in Node mode**:
 
    ```bash
    ELECTRON_RUN_AS_NODE=1 <path-to-electron> .output/server/index.mjs
    ```
 
-   No system Node installation is required — Electron ships the runtime.
-4. Environment passed to the child:
-   - `PORT` / `NITRO_PORT` and `HOST=127.0.0.1`
-   - `APP_DATA_DIR=<app.getPath('userData')>` so server functions can write real files
+   You do not need Node on the user machine. Electron contains the runtime.
+4. It passes this environment to the child process:
+   - `PORT` and `NITRO_PORT`, with `HOST=127.0.0.1`
+   - `APP_DATA_DIR=<app.getPath('userData')>` so server functions can write files
    - `NODE_ENV=production`
-5. Main waits for `/api/health`, then loads `http://127.0.0.1:<port>`.
-6. On `will-quit` (and on process exit) the child is killed.
+5. The main process waits for `/api/health`. Then it loads `http://127.0.0.1:<port>`.
+6. On `will-quit`, and on process exit, the app kills the child process.
 
 ## The web app
 
 ### Routing
 
-TanStack Router's file-based routing generates `src/routeTree.gen.ts` from the files in
-`src/routes`. Add a file, get a route. The root route uses the `shellComponent` slot to render the
-`<html>` document, with `<HeadContent />` and `<Scripts />` coming from the router.
+TanStack Router reads the files in `src/routes` and writes `src/routeTree.gen.ts`. Add a file and you
+get a route. The root route uses the `shellComponent` slot to render the `<html>` document.
+`<HeadContent />` and `<Scripts />` come from the router.
 
-`src/router.tsx` is where router-level defaults live (`defaultPreload`, `scrollRestoration`,
-not-found/error components). The `Register` interface makes `useNavigate`, `<Link to="...">` and
-friends fully type-safe.
+`src/router.tsx` holds the router defaults: `defaultPreload`, `scrollRestoration`, and the
+not-found and error components. The `Register` interface makes `useNavigate`, `<Link to="...">`, and
+similar APIs fully type-safe.
 
 ### SSR and hydration
 
-Route `loader`s are **isomorphic**: they run during SSR *and* on client-side navigation. That is why
-the Overview page calls a server function from its loader:
+Route `loader` functions are **isomorphic**. They run during SSR and during client-side navigation.
+That is why the overview page calls a server function from its loader:
 
 ```ts
 export const Route = createFileRoute('/')({
@@ -271,11 +277,11 @@ export const Route = createFileRoute('/')({
 })
 ```
 
-- During SSR the handler executes in the same Node process — no HTTP hop.
-- After hydration, navigating back to `/` re-runs the loader over the network as an RPC call.
+- During SSR, the handler runs in the same Node process. There is no HTTP request.
+- After hydration, a return to `/` runs the loader again over the network as an RPC call.
 
-Browser-only values must not run during the server render. The pattern used by
-`src/lib/desktop-client.ts` is to read `window` inside `useEffect`:
+Browser-only values must not run during the server render. `src/lib/desktop-client.ts` reads
+`window` inside `useEffect`:
 
 ```ts
 export function useDesktop(): DesktopApi | null {
@@ -285,8 +291,8 @@ export function useDesktop(): DesktopApi | null {
 }
 ```
 
-Server and first client render both return `null`, so hydration never mismatches. `<ClientOnly>` and
-`useHydrated()` from `@tanstack/react-router` are the other two tools in this toolbox.
+The server render and the first client render both return `null`. So hydration never fails.
+`<ClientOnly>` and `useHydrated()` from `@tanstack/react-router` are the other tools for this job.
 
 ### Streaming SSR
 
@@ -295,11 +301,11 @@ Server and first client render both return `null`, so hydration never mismatches
 ```ts
 loader: () => ({
   shellRenderedAt: new Date().toISOString(),
-  report: getSlowReport(), // ~1.5s — NOT awaited
+  report: getSlowReport(), // about 1.5 s — NOT awaited
 })
 ```
 
-and renders it with `<Await>` inside `<Suspense>`:
+It renders the promise with `<Await>` inside `<Suspense>`:
 
 ```tsx
 <Suspense fallback={<Skeleton lines={4} />}>
@@ -309,12 +315,12 @@ and renders it with `<Await>` inside `<Suspense>`:
 </Suspense>
 ```
 
-React flushes the shell immediately and streams the resolved boundary later in the same response.
+React sends the shell immediately. It sends the resolved boundary later in the same response.
 
-> **Bot user-agents are buffered on purpose.** `renderRouterToStream` checks
-> `isbot(request.headers.get('user-agent'))` and waits for `stream.allReady` for crawlers, so
-> `curl` (and `fetch` from Node without a UA) will *look* like streaming is broken. Test with a
-> browser-like UA — that is also what Electron's Chromium sends:
+> **Bot user-agents are buffered on purpose.** `renderRouterToStream` calls
+> `isbot(request.headers.get('user-agent'))`. For crawlers, it waits for `stream.allReady`. So
+> `curl`, or `fetch` from Node without a user-agent, makes streaming look broken. Test with a
+> browser user-agent. Electron's Chromium sends a browser user-agent.
 
 ```bash
 curl -N -A "Mozilla/5.0 Chrome/140" http://127.0.0.1:<port>/ssr
@@ -322,8 +328,9 @@ curl -N -A "Mozilla/5.0 Chrome/140" http://127.0.0.1:<port>/ssr
 
 ### Server functions
 
-`createServerFn` turns a function into a typed RPC endpoint. From a component it is a network call;
-during SSR it runs in-process. Zod schemas plug straight into `.validator()`:
+`createServerFn` turns a function into a typed RPC endpoint. A component calls it like a normal
+function. During SSR it runs in the same process. In the browser it becomes a network call. Zod
+schemas go directly into `.validator()`:
 
 ```ts
 export const incrementCounter = createServerFn({ method: 'POST' })
@@ -334,26 +341,30 @@ export const incrementCounter = createServerFn({ method: 'POST' })
   })
 ```
 
-The handler writes to `APP_DATA_DIR/server-state/counter.json` — Electron's per-user `userData`
-directory in the packaged app. Call `router.invalidate()` after a mutation to re-run loaders.
+The handler writes to `APP_DATA_DIR/server-state/counter.json`. In a package, this path is inside
+Electron's per-user `userData` directory. Call `router.invalidate()` after a mutation to run the
+loaders again.
 
 ### Server-only code and import protection
 
-TanStack Start runs every source file through **import protection**. By default:
+TanStack Start sends every source file through **import protection**. The default rules are:
 
-- `**/*.server.*` files cannot be imported into the client bundle.
-- `@tanstack/react-start/server` is denied in the client.
-- `.client.*` files cannot leak into the server bundle (and `import '@tanstack/react-start/server-only'` /
-  `.../client-only'` markers do the same for files that don't match the naming convention).
+- A file that matches `**/*.server.*` cannot go into the client bundle.
+- `@tanstack/react-start/server` is blocked in the client.
+- A file that matches `*.client.*` cannot go into the server bundle.
+- The markers `import '@tanstack/react-start/server-only'` and `import '@tanstack/react-start/client-only'`
+  do the same job for files that do not match the naming convention.
 
-In dev violations are mocked with a warning; **production builds fail**. `src/lib/counter.server.ts`
-is the example: it uses `node:fs`, and the client only ever sees the RPC stub defined in
+In development, a violation shows a warning and uses a mock. **A production build fails.**
+
+`src/lib/counter.server.ts` is the example. It uses `node:fs`. The client only sees the RPC stub in
 `src/lib/counter.ts`.
 
 ### Server routes
 
-For raw HTTP endpoints (webhooks, health checks, file downloads) define a route with a `server`
-property. `src/routes/api/health.ts` doubles as the Electron readiness probe:
+Use a server route for a plain HTTP endpoint, such as a webhook, a health check, or a file download.
+Define the route with a `server` property. `src/routes/api/health.ts` is also the readiness probe for
+Electron:
 
 ```ts
 export const Route = createFileRoute('/api/health')({
@@ -367,7 +378,7 @@ export const Route = createFileRoute('/api/health')({
 
 ### React Server Components
 
-RSC is enabled through three things:
+To turn on RSC, do three steps:
 
 ```bash
 pnpm add -D @vitejs/plugin-rsc react-server-dom-webpack
@@ -385,35 +396,35 @@ plugins: [
 
 Then use the helpers from `@tanstack/react-start/rsc`:
 
-| Helper                                                | Use case                                            |
-| ----------------------------------------------------- | --------------------------------------------------- |
-| `renderServerComponent(<El />)`                       | Server-render a component, inline it as a node      |
+| Helper                                                  | Use case                                         |
+| ------------------------------------------------------- | ------------------------------------------------ |
+| `renderServerComponent(<El />)`                         | Renders a component on the server and inlines it |
 | `createCompositeComponent(fn)` + `<CompositeComponent>` | Server component with client-filled **slots**    |
 
-Slots can be `children`, render props (server passes data down), or component props (client
-components receive server data). See `src/lib/rsc-demos.tsx` and `src/routes/server-components.tsx`.
+A slot can be `children`, a render prop (the server sends data down), or a component prop (the client
+component gets server data). See `src/lib/rsc-demos.tsx` and `src/routes/server-components.tsx`.
 
-Caching is handled by the router (keyed by route + params, tunable with `staleTime`/`loaderDeps`);
-call `router.invalidate()` after mutations. With TanStack Query, set
+The router caches RSC values by route and params. Use `staleTime` and `loaderDeps` to change the
+cache. Call `router.invalidate()` after a mutation. With TanStack Query, set
 `structuralSharing: false` for RSC values.
 
-> ⚠️ **RSC is experimental.** The API may change between minor versions. If you do not need it,
-> remove `rsc()` from `vite.config.ts` and the `rsc: { enabled: true }` option; the rest of the app
-> is unaffected.
+> ⚠️ **RSC is experimental.** The API can change between minor versions. If you do not need RSC,
+> remove `rsc()` from `vite.config.ts` and the `rsc: { enabled: true }` option. The rest of the app
+> does not change.
 
 ## The Electron side
 
 ### Main process
 
-`electron/src/main.ts` is deliberately small and opinionated:
+`electron/src/main.ts` is small and careful:
 
-- **Single instance lock** — a second launch focuses the existing window instead of starting a
-  second SSR server.
-- **`waitForUrl`** — polls with a timeout so a slow dev server, or a slow packaged server, never
-  produces a blank window.
-- **Navigation guard** — `web-contents-created` denies navigation to unexpected origins and sends
-  `window.open` targets to the OS browser.
-- **Graceful shutdown** — `will-quit` and `process.once('exit')` kill the SSR child.
+- **Single instance lock** — a second launch focuses the open window. It does not start a second SSR
+  server.
+- **`waitForUrl`** — polls with a timeout. A slow dev server or a slow packaged server never gives
+  an empty window.
+- **Navigation guard** — `web-contents-created` blocks navigation to other origins. It sends
+  `window.open` targets to the operating system browser.
+- **Graceful shutdown** — `will-quit` and `process.once('exit')` kill the SSR child process.
 
 ### The SSR server child process
 
@@ -431,14 +442,14 @@ const child = spawn(process.execPath, [entry], {
 })
 ```
 
-Server stdout/stderr is prefixed with `[ssr]` and forwarded to the main console — useful when a
-server function throws in a packaged app.
+The app adds `[ssr]` to the server output and sends it to the main console. This helps when a server
+function throws in a packaged app.
 
 ### Preload and the typed IPC contract
 
-`src/lib/desktop-contract.ts` is the **single source of truth**: channel names, payload types and
-the `DesktopApi` interface. It is imported by the preload script, by the main process and by the
-renderer. Because it has no runtime dependencies it is safe everywhere.
+`src/lib/desktop-contract.ts` is the **single source of truth**: channel names, payload types, and
+the `DesktopApi` interface. The preload script, the main process, and the renderer all import it.
+The file has no runtime dependencies, so it is safe everywhere.
 
 ```ts
 // electron/src/preload.ts
@@ -450,7 +461,7 @@ contextBridge.exposeInMainWorld('desktop', {
     openExternal: (url) => ipcRenderer.invoke(IPC.invoke.openExternal, url),
     pickFile: (options) => ipcRenderer.invoke(IPC.invoke.pickFile, options),
   },
-  on: (event, listener) => { /* subscribe + return unsubscribe */ },
+  on: (event, listener) => { /* subscribe, and return an unsubscribe function */ },
 })
 ```
 
@@ -461,35 +472,35 @@ const desktop = useDesktop()
 await desktop.invoke.ping('hello') // → "pong: hello"
 ```
 
-Handlers in `electron/src/ipc.ts` treat every argument as untrusted input: URLs are parsed and
-restricted to `http(s)`, file-dialog filters are sanitised, payloads are type-checked.
+The handlers in `electron/src/ipc.ts` treat every argument as untrusted input. They parse URLs and
+allow only `http(s)`. They clean the file-dialog filters. They check the payload types.
 
 ### IPC or server function?
 
-| Need                                                | Use                |
-| --------------------------------------------------- | ------------------ |
-| Domain data, databases, files                       | server function    |
-| Code shared with a web deployment                   | server function    |
-| Native dialogs, tray, menus, notifications, shell   | IPC                |
-| Window control, deep links, auto-update             | IPC                |
-| Anything that needs a browser API                    | client component   |
+| Need                                             | Use             |
+| ------------------------------------------------ | --------------- |
+| Domain data, databases, files                    | server function |
+| Code that is shared with a web deployment        | server function |
+| Native dialogs, tray, menus, notifications, shell | IPC            |
+| Window control, deep links, auto-update          | IPC             |
+| A browser API                                    | client component |
 
-A useful rule: **if it would still make sense on the web, it belongs in a server function; if it
-needs the user's machine, it belongs in IPC.**
+A useful rule: **if the code also makes sense on the web, use a server function. If the code needs
+the user machine, use IPC.**
 
 ### Security defaults
 
-The generated `BrowserWindow` uses:
+The generated `BrowserWindow` uses these settings:
 
-| Setting            | Value  | Why                                                        |
-| ------------------ | ------ | ---------------------------------------------------------- |
-| `contextIsolation` | `true` | page JS cannot touch the preload's realm                   |
-| `sandbox`          | `true` | renderer runs in the OS sandbox                            |
-| `nodeIntegration`  | `false`| no `require`/`process` in the page                         |
-| `webSecurity`      | `true` | same-origin policy stays on                                |
-| navigation         | guarded| unexpected origins open in the OS browser, never in-app    |
+| Setting            | Value   | Why                                                     |
+| ------------------ | ------- | ------------------------------------------------------- |
+| `contextIsolation` | `true`  | Page JavaScript cannot touch the preload realm.         |
+| `sandbox`          | `true`  | The renderer runs in the operating system sandbox.      |
+| `nodeIntegration`  | `false` | The page has no `require` and no `process`.             |
+| `webSecurity`      | `true`  | The same-origin policy stays on.                        |
+| navigation         | guarded | Other origins open in the operating system browser.     |
 
-The renderer only sees the frozen object exposed by `contextBridge`. See Electron's
+The renderer sees only the frozen object from `contextBridge`. See the Electron
 [security checklist](https://www.electronjs.org/docs/latest/tutorial/security).
 
 ## Building and packaging
@@ -498,7 +509,7 @@ The renderer only sees the frozen object exposed by `contextBridge`. See Electro
 
 ```yaml
 files:                 # inside app.asar
-  - build/**           # main.cjs + preload.cjs (everything inlined)
+  - build/**           # main.cjs and preload.cjs (all dependencies are inlined)
   - package.json
   - '!node_modules/**' # nothing else is needed
 
@@ -507,27 +518,27 @@ extraResources:
     to: app-server
 ```
 
-Because the main process bundle inlines its dependencies and the SSR server is self-contained,
-**no `node_modules` are packaged**. A build looks like this:
+The main bundle contains all its dependencies. The SSR server is self-contained. So the package does
+not contain `node_modules`. A build looks like this:
 
 ```
 release/mac-arm64/TanStack Start Desktop.app/Contents/Resources/
 ├── app.asar              ~50 KB   (main, preload, package.json)
-└── app-server/           ~2.3 MB  (SSR server + client assets)
+└── app-server/           ~2.3 MB  (SSR server and client assets)
 ```
 
-Platform targets live in `electron-builder.yml` (`dmg`+`zip`, `nsis`, `AppImage`+`deb`). For
-distribution you will want an app icon (`build-resources/icon.png`, 512×512+) and code signing
+Platform targets are in `electron-builder.yml` (`dmg` and `zip`, `nsis`, `AppImage` and `deb`). For
+distribution, add an app icon (`build-resources/icon.png`, 512×512 or larger) and code signing
 configuration. See the [electron-builder docs](https://www.electron.build/).
 
-> **Serving files with `file://` is not supported.** The renderer is always loaded over
-> `http://127.0.0.1:<port>` because SSR, server functions, RSC and streaming all need a real HTTP
-> origin. This also means no `file://` CORS quirks, cookies work, and `fetch('/api/...')` is valid.
+> **The app does not use `file://`.** The renderer always loads from `http://127.0.0.1:<port>`. SSR,
+> server functions, RSC, and streaming need a real HTTP origin. This also removes `file://` CORS
+> problems. Cookies work, and `fetch('/api/...')` is valid.
 
 ## Smoke test
 
-`pnpm smoke` builds the app, forces the production server path (even when unpackaged), and drives
-the real renderer through `webContents.executeJavaScript`:
+`pnpm smoke` builds the app. Then it uses the production server path, even when the app is not
+packaged. Then it drives the real renderer through `webContents.executeJavaScript`:
 
 ```
 ✔ SSR HTML contains the hero heading
@@ -537,61 +548,61 @@ the real renderer through `webContents.executeJavaScript`:
 ✔ streamed deferred data arrives
 ```
 
-That single run exercises: the Nitro server, SSR, hydration, TanStack Router client navigation,
-server-function RPC, the RSC Flight pipeline, streaming and the preload bridge. Use it in CI on
-Linux with `xvfb-run -a pnpm smoke`.
+One run tests the Nitro server, SSR, hydration, TanStack Router client navigation, server-function
+RPC, the RSC Flight pipeline, streaming, and the preload bridge. Use it in CI on Linux with
+`xvfb-run -a pnpm smoke`.
 
-To test the same checks against the dev server instead:
+To run the same checks against the dev server:
 
 ```bash
-pnpm dev:web &                        # in another shell
-ELECTRON_SMOKE_TEST=1 npx electron .  # uses the running dev server
+pnpm dev:web &                       # in another shell
+ELECTRON_SMOKE_TEST=1 npx electron . # uses the running dev server
 ```
 
 ## Troubleshooting
 
-| Symptom | Cause / fix |
-| ------- | ----------- |
-| `Port 3000 is already in use` | Another dev server is running: `lsof -ti :3000 \| xargs kill`. `strictPort` is on so the URL Electron waits for never drifts. |
-| `The SSR server bundle was not found … Run "npm run build:web"` | The packaged/prod path was requested before building. Run `pnpm build` or use `pnpm dev` for the dev path. |
-| `app.isPackaged` is false but you want production behavior | `ELECTRON_FORCE_PRODUCTION=1 electron .` — the same switch `pnpm smoke` uses. |
-| `Ignored build scripts: electron, esbuild, …` (pnpm 10/11) | pnpm blocks postinstall scripts by default. `pnpm-workspace.yaml` already approves the needed ones (`allowBuilds`); run `pnpm approve-builds` if you add packages with scripts. |
-| Streaming “does not work” with `curl` / Node `fetch` | Start buffers for bot user-agents on purpose — test with `-A "Mozilla/5.0 …"`. |
-| RSC build errors after upgrading | RSC is experimental; keep `@tanstack/react-start`, `@vitejs/plugin-rsc` and `react-server-dom-webpack` in sync with the versions in `package.json`, and see the docs link below. |
-| `verbatimModuleSyntax` warning | Keep it disabled for TanStack Start. |
-| Blank window in dev | Electron waits up to 60s for the dev URL; check the `[web]` lines in the `pnpm dev` output. |
-| Stale SSR server after a hard kill | `server.ts` kills the child on `will-quit` and `process.exit`; if you kill `-9` the OS will reap it, but you can also `pkill -f .output/server/index.mjs`. |
-| electron-builder warns about `duplicate dependency references` / platform binaries | Harmless for this setup: nothing from `node_modules` is packaged, so the warning only concerns build-time tooling. |
+| Symptom | Cause and fix |
+| ------- | ------------- |
+| `Port 3000 is already in use` | Another dev server is running. Run `lsof -ti :3000 \| xargs kill`. `strictPort` is on, so the URL that Electron waits for never changes. |
+| `The SSR server bundle was not found … Run "npm run build:web"` | You asked for the packaged path before the build. Run `pnpm build`. Or use `pnpm dev` for the dev path. |
+| `app.isPackaged` is false, but you want production behavior | Run `ELECTRON_FORCE_PRODUCTION=1 electron .`. `pnpm smoke` uses the same switch. |
+| `Ignored build scripts: electron, esbuild, …` (pnpm 10 or 11) | pnpm blocks postinstall scripts by default. `pnpm-workspace.yaml` already approves the needed packages (`allowBuilds`). Run `pnpm approve-builds` if you add a package with scripts. |
+| Streaming "does not work" with `curl` or Node `fetch` | TanStack Start buffers for bot user-agents on purpose. Test with `-A "Mozilla/5.0 …"`. |
+| RSC build errors after an upgrade | RSC is experimental. Keep `@tanstack/react-start`, `@vitejs/plugin-rsc`, and `react-server-dom-webpack` at the versions in `package.json`. |
+| `verbatimModuleSyntax` warning | Keep this option disabled for TanStack Start. |
+| Empty window in development | Electron waits up to 60 s for the dev URL. Look at the `[web]` lines in the `pnpm dev` output. |
+| A stale SSR server stays after a hard kill | `server.ts` kills the child on `will-quit` and on process exit. After `kill -9`, run `pkill -f .output/server/index.mjs`. |
+| electron-builder warns about `duplicate dependency references` or platform binaries | This is safe here. The package contains no `node_modules`, so the warning only concerns build tools. |
 
 ## Deploying the web version
 
-Nothing here is Electron-specific except `electron/`. The same `vite build` output deploys to any
-Nitro target. Swap or add a preset in `vite.config.ts`:
+Only the `electron/` directory is Electron-specific. The same `vite build` output goes to any Nitro
+target. Add or change a preset in `vite.config.ts`:
 
-- **Node / Docker / Railway** — what this repo uses: `node .output/server/index.mjs`
-- **Cloudflare** — `@cloudflare/vite-plugin` + `wrangler.jsonc` (see the hosting guide)
-- **Netlify / Vercel** — the corresponding Nitro preset or first-party Vite plugin
+- **Node, Docker, Railway** — the preset in this repository: `node .output/server/index.mjs`
+- **Cloudflare** — `@cloudflare/vite-plugin` and `wrangler.jsonc`
+- **Netlify or Vercel** — the matching Nitro preset or first-party Vite plugin
 
-Server functions and RSC pages work on every target; only the IPC bridge is desktop-only, and it is
-already written to render a graceful web fallback (`DesktopPanel` shows the “no IPC” state).
+Server functions and RSC pages work on every target. Only the IPC bridge is desktop-only. It already
+has a web fallback: `DesktopPanel` shows the "no IPC" state.
 
 ## Versions
 
-Installed at the time of writing (all on `latest`):
+Installed versions at the time of writing (all on `latest`):
 
-| Package                     | Version         |
-| --------------------------- | --------------- |
-| `@tanstack/react-start`     | 1.168.52        |
-| `@tanstack/react-router`    | 1.170.35        |
-| `react` / `react-dom`       | 19.3.0          |
-| `@vitejs/plugin-rsc`        | 0.5.34          |
-| `react-server-dom-webpack`  | 19.3.0          |
-| `vite`                      | 8.3.0           |
-| `nitro`                     | 3.0.260903-beta |
-| `tailwindcss`               | 4.3.3           |
-| `electron`                  | 44.3.0          |
-| `electron-builder`          | 26.15.3         |
-| `typescript`                | 7.0.2           |
+| Package                    | Version         |
+| -------------------------- | --------------- |
+| `@tanstack/react-start`    | 1.168.52        |
+| `@tanstack/react-router`   | 1.170.35        |
+| `react` and `react-dom`    | 19.3.0          |
+| `@vitejs/plugin-rsc`       | 0.5.34          |
+| `react-server-dom-webpack` | 19.3.0          |
+| `vite`                     | 8.3.0           |
+| `nitro`                    | 3.0.260903-beta |
+| `tailwindcss`              | 4.3.3           |
+| `electron`                 | 44.3.0          |
+| `electron-builder`         | 26.15.3         |
+| `typescript`               | 7.0.2           |
 
 ## Further reading
 
@@ -600,7 +611,7 @@ Installed at the time of writing (all on `latest`):
 - [Server functions](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions)
 - [Server entry point](https://tanstack.com/start/latest/docs/framework/react/guide/server-entry-point)
 - [Server components](https://tanstack.com/start/latest/docs/framework/react/guide/server-components)
-- [Hosting & Nitro](https://tanstack.com/start/latest/docs/framework/react/guide/hosting)
+- [Hosting and Nitro](https://tanstack.com/start/latest/docs/framework/react/guide/hosting)
 - [TanStack Router deferred data](https://tanstack.com/router/latest/docs/framework/react/guide/deferred-data-loading)
 - [Electron security](https://www.electronjs.org/docs/latest/tutorial/security)
 - [electron-builder](https://www.electron.build/)
