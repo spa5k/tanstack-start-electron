@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Blog images</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #ffffff;
+        color: #111111;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .shot {
+        width: 1360px;
+        padding: 56px 64px;
+        background: #ffffff;
+      }
+      .shot + .shot { border-top: 1px solid #e5e5e5; }
+      .kicker {
+        font-size: 15px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #737373;
+        margin: 0 0 8px;
+      }
+      h1 {
+        font-size: 34px;
+        line-height: 1.2;
+        margin: 0 0 36px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .row { display: flex; align-items: stretch; gap: 0; }
+      .box {
+        flex: 1;
+        border: 1px solid #d4d4d4;
+        padding: 20px 24px;
+        background: #ffffff;
+      }
+      .box strong { display: block; font-size: 20px; margin-bottom: 6px; }
+      .box span { font-size: 15px; color: #525252; line-height: 1.5; display: block; }
+      .box.dark { background: #111111; border-color: #111111; color: #ffffff; }
+      .box.dark span { color: #a3a3a3; }
+      .box.muted { background: #fafafa; }
+      .arrow {
+        align-self: center;
+        padding: 0 18px;
+        color: #737373;
+        font-size: 26px;
+        white-space: nowrap;
+      }
+      .arrow small { display: block; font-size: 13px; text-align: center; color: #737373; }
+      .stack { display: flex; flex-direction: column; gap: 18px; }
+      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+      .panel {
+        border: 1px solid #d4d4d4;
+        padding: 24px;
+      }
+      .panel h2 { margin: 0 0 4px; font-size: 19px; }
+      .panel .tag { font-size: 14px; color: #737373; margin: 0 0 20px; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #d4d4d4;
+        padding: 5px 12px;
+        font-size: 14px;
+        color: #404040;
+        margin-top: 16px;
+      }
+      .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+      .dot.green { background: #15803d; }
+      .dot.amber { background: #b45309; }
+      .terminal {
+        border: 1px solid #d4d4d4;
+        font-family: "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 17px;
+        line-height: 1.75;
+      }
+      .terminal .bar {
+        border-bottom: 1px solid #d4d4d4;
+        background: #fafafa;
+        padding: 10px 18px;
+        font-size: 14px;
+        color: #737373;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .terminal .body { padding: 20px 22px; white-space: pre; }
+      .cmd { color: #111111; }
+      .dim { color: #737373; }
+      .ok { color: #15803d; }
+      .err { color: #b91c1c; }
+    </style>
+  </head>
+  <body>
+    <section class="shot" data-shot="dev-flow">
+      <p class="kicker">Development</p>
+      <h1>Vite runs the app. Electron loads it. HMR stays on.</h1>
+      <div class="row">
+        <div class="box">
+          <strong>Vite dev server</strong>
+          <span>SSR, server functions, RSC, HMR over WebSocket</span>
+          <span>http://localhost:3000</span>
+        </div>
+        <div class="arrow">◄───<small>loads</small></div>
+        <div class="box dark">
+          <strong>Electron renderer</strong>
+          <span>Chromium window with React and the preload bridge</span>
+        </div>
+        <div class="arrow">◄───<small>restarts</small></div>
+        <div class="box muted">
+          <strong>Electron main</strong>
+          <span>tsup watch → nodemon → electron</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="shot" data-shot="prod-flow">
+      <p class="kicker">Production</p>
+      <h1>Two ways to host the same fetch handler.</h1>
+      <div class="split">
+        <div class="panel">
+          <h2>Custom scheme · default</h2>
+          <p class="tag">In-process handler. No TCP port.</p>
+          <div class="stack">
+            <div class="box dark">
+              <strong>Electron renderer</strong>
+              <span>app://renderer/</span>
+            </div>
+            <div class="arrow" style="text-align: center">▼<small>protocol.handle</small></div>
+            <div class="box">
+              <strong>Electron main</strong>
+              <span>imports .output/server/index.mjs and answers every request</span>
+            </div>
+            <div class="pill"><span class="dot green"></span>0 listening sockets</div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Loopback HTTP · optional</h2>
+          <p class="tag">Child process. Normal web behavior.</p>
+          <div class="stack">
+            <div class="box dark">
+              <strong>Electron renderer</strong>
+              <span>http://127.0.0.1:&lt;random&gt;</span>
+            </div>
+            <div class="arrow" style="text-align: center">▼<small>fetch</small></div>
+            <div class="box">
+              <strong>Child process</strong>
+              <span>srvx serves the same handler with normal cookies</span>
+            </div>
+            <div class="pill"><span class="dot amber"></span>1 loopback socket</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shot" data-shot="no-ports">
+      <p class="kicker">Proof</p>
+      <h1>No process listens on TCP.</h1>
+      <div class="terminal">
+        <div class="bar">Terminal — scheme mode</div>
+        <div class="body"><span class="cmd">$ lsof -a -p "$(pgrep -f 'Contents/MacOS/Electron' | tr '\n' ',' | sed 's/,$//')" \
+      -iTCP -sTCP:LISTEN -P -n</span>
+
+<span class="dim">(no output)</span>
+
+<span class="cmd">$ </span><span class="dim"># the app is still running and serving SSR, RSC and server functions</span></div>
+      </div>
+    </section>
+
+    <section class="shot" data-shot="smoke">
+      <p class="kicker">Verification</p>
+      <h1>One command checks the whole stack.</h1>
+      <div class="terminal">
+        <div class="bar">Terminal — pnpm smoke</div>
+        <div class="body"><span class="cmd">$ pnpm smoke</span>
+<span class="dim">[main] in-process SSR handler ready (pid 33234)</span>
+<span class="ok">✔</span> SSR HTML contains the hero heading
+<span class="ok">✔</span> preload bridge answers appInfo()
+<span class="ok">✔</span> client-side navigation + server function mutation
+<span class="ok">✔</span> React Server Components route renders
+<span class="ok">✔</span> streamed deferred data arrives
+<span class="ok">✔</span> streaming is not buffered
+
+All smoke checks passed.</div>
+      </div>
+    </section>
+  </body>
+</html>

@@ -20,7 +20,8 @@
     "dist:dir": "npm run build && electron-builder --dir",
     "smoke": "npm run build && cross-env NODE_ENV=production ELECTRON_SMOKE_TEST=1 electron .",
     "screenshots": "npm run build && electron scripts/screenshots.cjs",
-    "start:server": "node scripts/serve.mjs"
+    "start:server": "node scripts/serve.mjs",
+    "blog:images": "electron scripts/blog-images.cjs"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.35",
