@@ -18,34 +18,38 @@ function HostReport() {
   const totalGb = (totalmem() / 1024 / 1024 / 1024).toFixed(1)
 
   return (
-    <div className="rounded-xl border border-violet-400/20 bg-violet-400/5 p-4">
-      <p className="text-[11px] font-semibold tracking-[0.18em] text-violet-300 uppercase">
+    <div className="border border-neutral-200">
+      <p className="border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-[11px] font-medium tracking-wider text-neutral-500 uppercase">
         Rendered by a server component
       </p>
-      <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 text-sm">
         <div>
-          <dt className="text-slate-400">Host</dt>
-          <dd className="font-mono text-slate-200">{hostname()}</dd>
+          <dt className="text-xs text-neutral-500">Host</dt>
+          <dd className="mt-0.5 font-mono text-xs text-neutral-900">
+            {hostname()}
+          </dd>
         </div>
         <div>
-          <dt className="text-slate-400">Platform</dt>
-          <dd className="font-mono text-slate-200">
+          <dt className="text-xs text-neutral-500">Platform</dt>
+          <dd className="mt-0.5 font-mono text-xs text-neutral-900">
             {platform()} {release()}
           </dd>
         </div>
         <div>
-          <dt className="text-slate-400">CPU cores</dt>
-          <dd className="font-mono text-slate-200">{cores}</dd>
+          <dt className="text-xs text-neutral-500">CPU cores</dt>
+          <dd className="mt-0.5 font-mono text-xs text-neutral-900">{cores}</dd>
         </div>
         <div>
-          <dt className="text-slate-400">Total memory</dt>
-          <dd className="font-mono text-slate-200">{totalGb} GB</dd>
+          <dt className="text-xs text-neutral-500">Total memory</dt>
+          <dd className="mt-0.5 font-mono text-xs text-neutral-900">
+            {totalGb} GB
+          </dd>
         </div>
       </dl>
-      <p className="mt-3 text-xs text-violet-200/70">
-        This markup arrived as a Flight payload. None of the code that produced
-        it is in your client bundle — inspect the network tab and look for the
-        RSC responses separate from the JS chunks.
+      <p className="border-t border-neutral-200 px-4 py-3 text-xs leading-relaxed text-neutral-500">
+        This markup arrived as a Flight payload. The code that produced it is
+        not in your client bundle. Inspect the network tab to see the RSC
+        responses next to the JS chunks.
       </p>
     </div>
   )
@@ -62,7 +66,7 @@ export const getCompositeDemo = createServerFn({ method: 'GET' }).handler(
   async () => {
     const src = await createCompositeComponent(
       (props: {
-        /** Render prop: the server hands data *down* to client code. */
+        /** Render prop: the server hands data down to client code. */
         renderStamp?: (data: {
           renderedAt: string
           hostname: string
@@ -70,23 +74,25 @@ export const getCompositeDemo = createServerFn({ method: 'GET' }).handler(
         /** Children slot: client components rendered inside server markup. */
         children?: React.ReactNode
       }) => (
-        <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-4">
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-cyan-300 uppercase">
+        <div className="border border-neutral-200">
+          <p className="border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-[11px] font-medium tracking-wider text-neutral-500 uppercase">
             Composite server component
           </p>
-          <p className="mt-2 text-sm text-slate-300">
-            The layout, copy and host info below are server-rendered. The
-            buttons inside the dashed area are client components passed through
-            slots, so they keep their state and event handlers.
-          </p>
-          <div className="mt-2 font-mono text-xs text-cyan-200">
-            {props.renderStamp?.({
-              renderedAt: new Date().toISOString(),
-              hostname: hostname(),
-            })}
-          </div>
-          <div className="mt-4 rounded-lg border border-dashed border-white/20 p-3">
-            {props.children}
+          <div className="p-4">
+            <p className="text-sm text-neutral-700">
+              The layout and text below are server-rendered. The buttons inside
+              the dashed area are client components from slots. They keep their
+              state and event handlers.
+            </p>
+            <p className="mt-2 font-mono text-xs text-neutral-500">
+              {props.renderStamp?.({
+                renderedAt: new Date().toISOString(),
+                hostname: hostname(),
+              })}
+            </p>
+            <div className="mt-4 border border-dashed border-neutral-300 p-3">
+              {props.children}
+            </div>
           </div>
         </div>
       ),

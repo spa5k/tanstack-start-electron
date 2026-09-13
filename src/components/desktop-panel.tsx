@@ -39,37 +39,27 @@ export function DesktopPanel() {
 
   if (!desktop) {
     return (
-      <Card
-        eyebrow="Electron bridge"
-        title="Preload API not detected"
-        className="border-dashed"
-      >
+      <Card eyebrow="Electron bridge" title="Preload API not detected">
         <p>
-          You are looking at the plain Vite dev server (or a production
-          SSR-only render). Start the desktop shell with{' '}
-          <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-xs text-cyan-200">
-            npm run dev
-          </code>{' '}
-          to exercise the IPC bridge.
+          This is the plain web renderer. Start the desktop app with{' '}
+          <code className="font-mono text-xs">pnpm dev</code> or{' '}
+          <code className="font-mono text-xs">pnpm start</code> to use the IPC
+          bridge.
         </p>
       </Card>
     )
   }
 
   return (
-    <Card
-      eyebrow="Electron bridge"
-      title="window.desktop — contextBridge IPC"
-      className="border-emerald-400/20"
-    >
+    <Card eyebrow="Electron bridge" title="window.desktop — contextBridge IPC">
       <div className="flex flex-wrap gap-2">
-        <Pill tone="emerald">contextIsolation: true</Pill>
-        <Pill tone="emerald">sandbox: true</Pill>
-        <Pill tone="emerald">nodeIntegration: false</Pill>
+        <Pill tone="ok">contextIsolation: true</Pill>
+        <Pill tone="ok">sandbox: true</Pill>
+        <Pill tone="ok">nodeIntegration: false</Pill>
       </div>
 
       {error ? (
-        <p className="mt-3 rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-xs text-red-200">
+        <p className="mt-3 border border-red-300 bg-red-50 p-2 text-xs text-red-700">
           {error}
         </p>
       ) : null}
@@ -83,11 +73,11 @@ export function DesktopPanel() {
         <KeyValue label="userData" value={info?.userData ?? '…'} />
       </dl>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <input
           value={pingInput}
           onChange={(event) => setPingInput(event.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-white outline-none focus:border-cyan-400/50"
+          className="min-w-0 flex-1 border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 outline-none focus:border-neutral-900"
         />
         <Button
           onClick={() => {
@@ -103,7 +93,9 @@ export function DesktopPanel() {
       </div>
 
       {pingReply ? (
-        <p className="mt-2 font-mono text-xs text-emerald-200">→ {pingReply}</p>
+        <p className="mt-2 font-mono text-xs text-neutral-700">
+          → {pingReply}
+        </p>
       ) : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -132,14 +124,14 @@ export function DesktopPanel() {
       </div>
 
       {pickedFile ? (
-        <p className="mt-2 font-mono text-xs break-all text-cyan-200">
+        <p className="mt-2 font-mono text-xs break-all text-neutral-700">
           selected: {pickedFile}
         </p>
       ) : null}
 
-      <p className="mt-4 text-xs text-slate-500">
-        Last `themeChanged` push from the main process:{' '}
-        <span className="font-mono text-slate-300">{lastTheme ?? 'none yet'}</span>
+      <p className="mt-4 text-xs text-neutral-500">
+        Last theme event from the main process:{' '}
+        <span className="font-mono text-neutral-700">{lastTheme ?? 'none yet'}</span>
       </p>
     </Card>
   )

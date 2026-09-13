@@ -38,9 +38,9 @@ export const Route = createRootRoute({
 
 const navigation = [
   { to: '/', label: 'Overview' },
-  { to: '/ssr', label: 'Streaming SSR' },
-  { to: '/server-functions', label: 'Server Functions' },
-  { to: '/server-components', label: 'Server Components' },
+  { to: '/ssr', label: 'SSR' },
+  { to: '/server-functions', label: 'Server functions' },
+  { to: '/server-components', label: 'Server components' },
 ] as const
 
 function RootDocument({ children }: { children: ReactNode }) {
@@ -49,35 +49,30 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
-        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(60%_50%_at_50%_-10%,rgba(34,211,238,0.14),transparent)]" />
-        <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-8">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
-            <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-sm font-black text-slate-950">
-                TS
-              </span>
-              <div>
-                <p className="text-sm font-semibold tracking-wide">
-                  TanStack Start × Electron
-                </p>
-                <p className="text-xs text-slate-400">
-                  SSR · streaming · server functions · RSC · IPC
-                </p>
-              </div>
+      <body className="min-h-screen bg-white text-neutral-900 antialiased">
+        <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
+          <header className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral-900 pb-4">
+            <div>
+              <p className="text-sm font-semibold tracking-tight">
+                TanStack Start × Electron
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">
+                SSR · streaming · server functions · RSC · IPC
+              </p>
             </div>
             <DesktopBadge />
           </header>
 
-          <nav className="flex flex-wrap gap-1 py-4">
+          <nav className="flex flex-wrap gap-x-6 gap-y-2 border-b border-neutral-200 py-3">
             {navigation.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 activeOptions={{ exact: item.to === '/' }}
-                className="rounded-lg px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                className="text-sm text-neutral-500 hover:text-neutral-900"
                 activeProps={{
-                  className: 'bg-white/10 text-white shadow-inner',
+                  className:
+                    'font-medium text-neutral-900 underline underline-offset-4',
                 }}
               >
                 {item.label}
@@ -85,11 +80,10 @@ function RootDocument({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <main className="flex-1 pb-12">{children}</main>
+          <main className="flex-1 py-8">{children}</main>
 
-          <footer className="border-t border-white/10 pt-4 text-xs text-slate-500">
-            Rendering is server-driven; interactivity is client-driven. Read
-            README.md for the full architecture guide.
+          <footer className="border-t border-neutral-200 pt-4 text-xs text-neutral-500">
+            Rendered on the server, hydrated in the browser.
           </footer>
         </div>
 

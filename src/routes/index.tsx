@@ -14,32 +14,29 @@ function OverviewPage() {
   const snapshot = Route.useLoaderData()
 
   return (
-    <div className="grid gap-6 py-6 lg:grid-cols-2">
+    <div className="grid gap-6 lg:grid-cols-2">
       <div className="space-y-6">
         <div>
           <h1
-            className="text-2xl font-bold text-white"
+            className="text-xl font-semibold tracking-tight text-neutral-900"
             data-testid="hero-heading"
           >
             A full-stack React framework in a desktop shell
           </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            The renderer you are looking at was server-rendered by a Node
-            process that Electron started, then hydrated in Chromium. Server
-            functions and Server Components execute in that same process.
+          <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+            This HTML was rendered by a Node process that Electron started,
+            then hydrated in Chromium. Server functions and Server Components
+            run in that same process.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Pill tone="cyan">SSR</Pill>
-            <Pill tone="emerald">Streaming</Pill>
-            <Pill tone="violet">RSC</Pill>
-            <Pill tone="amber">IPC</Pill>
+            <Pill>SSR</Pill>
+            <Pill>Streaming</Pill>
+            <Pill>RSC</Pill>
+            <Pill>IPC</Pill>
           </div>
         </div>
 
-        <Card
-          eyebrow="Server snapshot"
-          title="What the SSR process sees"
-        >
+        <Card eyebrow="Server snapshot" title="What the SSR process sees">
           <dl>
             <KeyValue label="rendered at" value={snapshot.renderedAt} />
             <KeyValue label="pid" value={snapshot.pid} />
@@ -61,9 +58,8 @@ function OverviewPage() {
             />
             <KeyValue label="user-agent" value={snapshot.request.userAgent} />
           </dl>
-          <p className="mt-3 text-xs text-slate-500">
-            Refresh the window (⌘R / Ctrl+R). Everything above is recomputed on
-            the server, not in the browser.
+          <p className="mt-3 text-xs text-neutral-500">
+            Press ⌘R or Ctrl+R. The server computes all values again.
           </p>
         </Card>
       </div>
@@ -71,24 +67,28 @@ function OverviewPage() {
       <div className="space-y-6">
         <DesktopPanel />
 
-        <Card eyebrow="How it fits together" title="Request lifecycle">
-          <ol className="list-decimal space-y-2 pl-4 text-sm text-slate-300">
+        <Card eyebrow="Lifecycle" title="Request lifecycle">
+          <ol className="list-decimal space-y-2 pl-4">
             <li>
-              In dev, Electron loads the Vite dev server. In production, it
-              spawns <code className="font-mono text-cyan-200">.output/server/index.mjs</code>{' '}
+              In development, Electron loads the Vite dev server. In
+              production, it starts{' '}
+              <code className="font-mono text-xs">
+                .output/server/index.mjs
+              </code>{' '}
               and loads that origin.
             </li>
             <li>
-              The Start server renders the route tree to HTML, streaming
-              Suspense boundaries as they resolve.
+              The Start server renders the route tree to HTML. It streams each
+              Suspense boundary as it resolves.
             </li>
             <li>
-              Server functions are called in-process during SSR; from the
-              browser they become typed RPC calls.
+              Server functions run in-process during SSR. In the browser they
+              become typed RPC calls.
             </li>
             <li>
-              The preload script exposes a frozen <code className="font-mono">window.desktop</code>{' '}
-              API over <code className="font-mono">contextBridge</code>.
+              The preload script exposes a frozen{' '}
+              <code className="font-mono text-xs">window.desktop</code> API
+              over <code className="font-mono text-xs">contextBridge</code>.
             </li>
           </ol>
         </Card>

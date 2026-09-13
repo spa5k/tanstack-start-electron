@@ -13,11 +13,9 @@ export function ClientClock() {
   }, [])
 
   return (
-    <p className="font-mono text-sm text-emerald-200">
-      client clock · {now.toLocaleTimeString()}
-      <span className="ml-2 text-emerald-400/60">
-        (ticks only after hydration)
-      </span>
+    <p className="font-mono text-sm text-neutral-700">
+      {now.toLocaleTimeString()}
+      <span className="ml-2 text-neutral-400">ticks after hydration</span>
     </p>
   )
 }

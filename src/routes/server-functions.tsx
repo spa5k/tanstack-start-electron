@@ -27,25 +27,27 @@ function ServerFunctionsPage() {
   }
 
   return (
-    <div className="grid gap-6 py-6 lg:grid-cols-2">
+    <div className="grid gap-6 lg:grid-cols-2">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Server functions</h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Type-safe RPC with no API layer. The handler runs in the SSR
-            process and writes a real file on disk; the client only sees a
+          <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+            Server functions
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+            Type-safe RPC without an API layer. The handler runs in the SSR
+            process and writes a file on disk. The client only sees a
             fetch-shaped stub.
           </p>
         </div>
 
         <Card eyebrow="Mutation" title="Filesystem-backed counter">
           <p
-            className="text-5xl font-black text-cyan-300 tabular-nums"
+            className="text-5xl font-semibold tabular-nums text-neutral-900"
             data-testid="counter-value"
           >
             {counter.value}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-neutral-500">
             last write: {counter.updatedAt ?? 'never'}
           </p>
 
@@ -61,7 +63,6 @@ function ServerFunctionsPage() {
             ))}
             <Button
               disabled={isPending}
-              className="border-red-400/20 bg-red-400/10 text-red-200 hover:bg-red-400/20"
               onClick={() => run(() => resetCounter())}
             >
               reset
@@ -69,10 +70,10 @@ function ServerFunctionsPage() {
           </div>
 
           {isPending ? (
-            <p className="mt-2 text-xs text-cyan-300">calling server fn…</p>
+            <p className="mt-2 text-xs text-neutral-500">calling server fn…</p>
           ) : null}
           {error ? (
-            <p className="mt-2 rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-xs text-red-200">
+            <p className="mt-2 border border-red-300 bg-red-50 p-2 text-xs text-red-700">
               {error}
             </p>
           ) : null}
@@ -84,11 +85,11 @@ function ServerFunctionsPage() {
 
         <Card eyebrow="Validation" title="Zod runs on the server">
           <p>
-            <code className="font-mono text-xs text-cyan-200">
+            <code className="font-mono text-xs">
               .validator(z.object({'{'} by: z.number().int().min(1).max(10) {'}'}))
             </code>{' '}
-            rejects bad payloads before your handler runs. The <em>same types</em>{' '}
-            flow to the call site, so{' '}
+            rejects bad payloads before your handler runs. The same types flow
+            to the call site, so{' '}
             <code className="font-mono text-xs">
               incrementCounter({'{'} data: {'{'} by: 999 {'}'} {'}'})
             </code>{' '}
@@ -99,39 +100,39 @@ function ServerFunctionsPage() {
 
       <div className="space-y-6">
         <Card eyebrow="Decision guide" title="Server function or IPC?">
-          <div className="space-y-3 text-sm">
+          <div className="space-y-3">
             <div>
-              <Pill tone="cyan">Server function</Pill>
-              <p className="mt-1 text-slate-400">
-                Data for the UI: reads/writes that belong to the app domain and
-                should behave identically on the web target. Runs in the SSR
-                process, so it has the filesystem and can use secrets.
+              <Pill>Server function</Pill>
+              <p className="mt-2 text-neutral-600">
+                Data for the UI. Reads and writes that belong to the app
+                domain. The code also behaves the same on a web deployment.
               </p>
             </div>
             <div>
-              <Pill tone="amber">IPC</Pill>
-              <p className="mt-1 text-slate-400">
-                Desktop capabilities: OS dialogs, tray, menus, shell,
-                notifications, window control. Anything that needs the user's
-                machine and would be meaningless on a plain web deployment.
+              <Pill>IPC</Pill>
+              <p className="mt-2 text-neutral-600">
+                Desktop functions. Dialogs, tray, menus, shell, notifications
+                and window control. These need the user machine.
               </p>
             </div>
           </div>
         </Card>
 
-        <Card eyebrow="On the server" title="Why this still works offline">
-          <ul className="list-disc space-y-2 pl-4 text-sm text-slate-300">
+        <Card eyebrow="On the server" title="Why this works offline">
+          <ul className="list-disc space-y-2 pl-4">
             <li>
-              Electron spawns the SSR server as a child process on a random
-              loopback port — no internet needed.
+              Electron starts the SSR server as a child process on a random
+              loopback port. No internet needed.
             </li>
             <li>
-              The server's <code className="font-mono">APP_DATA_DIR</code> is
-              Electron's <code className="font-mono">userData</code> directory,
-              so writes land in a writable, per-user location.
+              The server gets{' '}
+              <code className="font-mono text-xs">APP_DATA_DIR</code> from
+              Electron. All writes go to the per-user{' '}
+              <code className="font-mono text-xs">userData</code> directory.
             </li>
             <li>
-              Requests never leave <code className="font-mono">127.0.0.1</code>.
+              Requests never leave{' '}
+              <code className="font-mono text-xs">127.0.0.1</code>.
             </li>
           </ul>
         </Card>

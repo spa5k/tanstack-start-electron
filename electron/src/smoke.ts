@@ -58,7 +58,7 @@ const rendererScript = /* js */ `
   }
 
   // Client-side navigation + a server-function mutation.
-  nav('Server Functions')?.click()
+  nav('Server functions')?.click()
   await wait(900)
   result.counterBefore =
     document.querySelector('[data-testid="counter-value"]')?.textContent?.trim() ?? null
@@ -68,7 +68,7 @@ const rendererScript = /* js */ `
     document.querySelector('[data-testid="counter-value"]')?.textContent?.trim() ?? null
 
   // React Server Components route.
-  nav('Server Components')?.click()
+  nav('Server components')?.click()
   await wait(2_500)
   result.rscPath = location.pathname
   result.rscText = document.body.textContent?.includes('Rendered by a server component')
@@ -77,7 +77,7 @@ const rendererScript = /* js */ `
   result.rscPreview = (document.body.textContent ?? '').slice(0, 1500)
 
   // Streaming SSR route (resolved content should be present after the wait).
-  nav('Streaming SSR')?.click()
+  nav('SSR')?.click()
   await wait(2_500)
   result.streamedText = document.body.textContent?.includes('resolved in')
     ? 'deferred chunk streamed'

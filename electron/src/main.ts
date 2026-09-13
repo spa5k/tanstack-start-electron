@@ -80,7 +80,7 @@ function createWindow(url: string): BrowserWindow {
     minWidth: 900,
     minHeight: 600,
     show: false,
-    backgroundColor: '#020617',
+    backgroundColor: '#ffffff',
     title: 'TanStack Start × Electron',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {

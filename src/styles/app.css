@@ -8,7 +8,7 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -16,5 +16,6 @@ body {
 }
 
 ::selection {
-  background: rgb(34 211 238 / 0.3);
+  background: #111111;
+  color: #ffffff;
 }

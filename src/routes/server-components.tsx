@@ -19,31 +19,34 @@ function ServerComponentsPage() {
   const { Renderable, composite } = Route.useLoaderData()
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="max-w-3xl space-y-8">
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
             React Server Components
           </h1>
-          <Pill tone="amber">experimental</Pill>
+          <Pill tone="warn">experimental</Pill>
         </div>
-        <p className="mt-2 max-w-2xl text-sm text-slate-400">
-          Enabled through <code className="font-mono text-cyan-200">@vitejs/plugin-rsc</code>{' '}
-          and <code className="font-mono text-cyan-200">rsc: {'{'} enabled: true {'}'}</code>.
-          Server components are rendered to a Flight stream and never ship
-          their code (or their imports) to the browser.
+        <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+          Enabled through{' '}
+          <code className="font-mono text-xs">@vitejs/plugin-rsc</code> and{' '}
+          <code className="font-mono text-xs">
+            rsc: {'{'} enabled: true {'}'}
+          </code>
+          . The server renders these components to a Flight stream. Their code
+          and imports never reach the browser.
         </p>
       </div>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-300">
+      <section className="space-y-3">
+        <h2 className="border-b border-neutral-200 pb-2 text-sm font-semibold text-neutral-900">
           1 · renderServerComponent — no slots
         </h2>
         {Renderable}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold tracking-wide text-slate-300">
+      <section className="space-y-3">
+        <h2 className="border-b border-neutral-200 pb-2 text-sm font-semibold text-neutral-900">
           2 · createCompositeComponent — server markup, client islands
         </h2>
         <CompositeComponent
@@ -54,7 +57,7 @@ function ServerComponentsPage() {
             </span>
           )}
         >
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-6">
             <SlotCounter label="children slot" />
             <SlotCounter label="another island" />
           </div>
@@ -62,21 +65,19 @@ function ServerComponentsPage() {
       </section>
 
       <Card eyebrow="Mental model" title="Where each piece runs">
-        <ul className="list-disc space-y-2 pl-4 text-sm text-slate-300">
+        <ul className="list-disc space-y-2 pl-4">
           <li>
-            <strong className="text-violet-200">Server components</strong> can
-            be <code className="font-mono">async</code>, read the filesystem,
-            and import heavy libraries. They render to a serialized payload.
+            Server components can be async. They read the filesystem and import
+            heavy libraries. They render to a serialized payload.
           </li>
           <li>
-            <strong className="text-cyan-200">Client components</strong> arrive
-            through slots (children, render props, component props) and stay
-            interactive.
+            Client components arrive through slots (children, render props and
+            component props). They stay interactive.
           </li>
           <li>
-            Data is cached by route &amp; params; call{' '}
-            <code className="font-mono">router.invalidate()</code> to refresh a
-            server component after a mutation.
+            The router caches data by route and params. Call{' '}
+            <code className="font-mono text-xs">router.invalidate()</code> to
+            refresh a server component after a mutation.
           </li>
         </ul>
       </Card>

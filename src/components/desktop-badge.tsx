@@ -9,12 +9,12 @@ export function DesktopBadge() {
   const desktop = useDesktop()
 
   if (!desktop) {
-    return <Pill>Web preview — no IPC</Pill>
+    return <Pill>Web preview</Pill>
   }
 
   return (
-    <Pill tone="emerald">
-      <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+    <Pill tone="ok">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
       Electron · {desktop.platform}
     </Pill>
   )
