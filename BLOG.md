@@ -2,6 +2,8 @@
 
 ### SSR, streaming, server functions, React Server Components, typed IPC — and a production build with no open ports
 
+![TanStack Start × Electron — full-stack React in a desktop app](blog/og.png)
+
 Desktop apps deserve the same tools as web apps. TanStack Start gives you typed routing, server-side
 rendering, server functions, and React Server Components. Electron gives you the desktop.
 
@@ -249,6 +251,8 @@ pnpm start    # production build, no open ports
 pnpm smoke    # six checks against the real app
 ```
 
+![Command and mode cheat sheet](blog/cheatsheet.png)
+
 The repository: **https://github.com/spa5k/tanstack-start-electron**
 
 ---
@@ -286,7 +290,9 @@ A few choices are worth knowing before you extend the project.
 <!--
 PUBLISHING NOTES (delete before posting)
 
-Images, in order:
+Use blog/og.png (1200×630) as the featured image and social preview.
+
+Body images, in order:
   1. screenshots/overview.jpg          (What you get)
   2. blog/hosts.png                    (One handler, three hosts)
   3. screenshots/streaming-ssr.jpg     (Streaming)
@@ -296,6 +302,7 @@ Images, in order:
   7. blog/no-ports.png                 (lsof proof)
   8. blog/smoke.png                    (Testing)
   9. blog/dev-flow.png                 (Development)
+ 10. blog/cheatsheet.png               (Getting started)
 
 Tags: Electron, React, TypeScript, Web Development, JavaScript
 -->

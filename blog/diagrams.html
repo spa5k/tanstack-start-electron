@@ -92,9 +92,115 @@
       .dim { color: #737373; }
       .ok { color: #15803d; }
       .err { color: #b91c1c; }
+
+      /* OG card */
+      .og-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 56px;
+        height: 100%;
+        align-items: center;
+      }
+      .og-kicker {
+        font-size: 17px;
+        letter-spacing: 0.16em;
+        color: #737373;
+        margin: 0 0 18px;
+      }
+      .og-title {
+        font-size: 58px;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        margin: 0 0 20px;
+        font-weight: 700;
+      }
+      .og-sub {
+        font-size: 20px;
+        line-height: 1.5;
+        color: #525252;
+        margin: 0 0 34px;
+      }
+      .og-row { display: flex; align-items: center; gap: 20px; }
+      .og-url { font-size: 16px; color: #737373; }
+      .og-diagram { display: flex; flex-direction: column; }
+      .og-diagram .arrow { padding: 10px 0; text-align: center; font-size: 22px; }
+
+      /* Cheat sheet */
+      .cmd-list { display: flex; flex-direction: column; }
+      .cmd-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 13px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 17px;
+      }
+      .cmd-row:last-child { border-bottom: 0; }
+      .cmd-row code {
+        font-family: "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 16px;
+        color: #111111;
+        white-space: nowrap;
+      }
+      .cmd-row span { color: #525252; text-align: right; }
     </style>
   </head>
   <body>
+    <section class="shot" data-shot="og" style="width: 1200px; height: 630px; padding: 72px">
+      <div class="og-grid">
+        <div>
+          <p class="og-kicker">TANSTACK START × ELECTRON</p>
+          <h1 class="og-title">Full-stack React<br />in a desktop app</h1>
+          <p class="og-sub">SSR · Streaming · Server functions · React Server Components · Typed IPC</p>
+          <div class="og-row">
+            <span class="pill" style="margin: 0"><span class="dot green"></span>No open ports</span>
+            <span class="og-url">github.com/spa5k/tanstack-start-electron</span>
+          </div>
+        </div>
+        <div class="og-diagram">
+          <div class="box dark">
+            <strong>Electron renderer</strong>
+            <span>app://renderer/</span>
+          </div>
+          <div class="arrow">▼</div>
+          <div class="box">
+            <strong>SSR handler</strong>
+            <span>In-process · 0 listening sockets</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shot" data-shot="cheatsheet">
+      <p class="kicker">Cheat sheet</p>
+      <h1>Commands, modes, and flags.</h1>
+      <div class="split">
+        <div class="panel">
+          <h2>Commands</h2>
+          <p class="tag">Every day and every release.</p>
+          <div class="cmd-list">
+            <div class="cmd-row"><code>pnpm dev</code><span>Vite, Electron, HMR</span></div>
+            <div class="cmd-row"><code>pnpm start</code><span>Build and run production</span></div>
+            <div class="cmd-row"><code>pnpm smoke</code><span>Six end-to-end checks</span></div>
+            <div class="cmd-row"><code>pnpm typecheck</code><span>Web app and Electron</span></div>
+            <div class="cmd-row"><code>pnpm dist</code><span>Installers into release/</span></div>
+            <div class="cmd-row"><code>pnpm start:server</code><span>Run the handler on Node</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Modes and flags</h2>
+          <p class="tag">One build, several hosts.</p>
+          <div class="cmd-list">
+            <div class="cmd-row"><code>app:// scheme</code><span>Default · no ports</span></div>
+            <div class="cmd-row"><code>ELECTRON_USE_HTTP_SERVER=1</code><span>Loopback HTTP mode</span></div>
+            <div class="cmd-row"><code>ELECTRON_FORCE_PRODUCTION=1</code><span>Skip the dev server</span></div>
+            <div class="cmd-row"><code>ELECTRON_SMOKE_TEST=1</code><span>Run checks and exit</span></div>
+            <div class="cmd-row"><code>ELECTRON_RENDERER_URL</code><span>Load another dev URL</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="shot" data-shot="hosts">
       <p class="kicker">One handler, three hosts</p>
       <h1>The same build runs in Electron and on Node.</h1>
